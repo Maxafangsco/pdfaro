@@ -398,6 +398,7 @@
     "browserNotSupported": "お使いのブラウザはこの機能をサポートしていません。",
     "invalidPageRange": "無効なページ範囲が指定されました。",
     "invalidOptions": "無効なオプションが指定されました。",
+    "invalidPassword": "The password you entered is incorrect.",
     "unknown": "予期しないエラーが発生しました。もう一度お試しください。",
     "toolNotFound": "Tool Not Found"
   },

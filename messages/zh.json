@@ -411,6 +411,7 @@
     "browserNotSupported": "您的浏览器不支持此功能。",
     "invalidPageRange": "指定的页面范围无效。",
     "invalidOptions": "提供的选项无效。",
+    "invalidPassword": "The password you entered is incorrect.",
     "unknown": "发生意外错误。请重试。",
     "toolNotFound": "工具未找到"
   },

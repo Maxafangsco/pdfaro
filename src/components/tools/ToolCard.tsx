@@ -78,7 +78,7 @@ export function ToolCard({ tool, locale, className = '', localizedContent, badge
             data-testid="tool-card-icon"
             aria-hidden="true"
           >
-            <IconComponent className="w-5 h-5 text-[hsl(var(--color-primary))]" />
+            <IconComponent className="w-5 h-5 text-[hsl(var(--color-primary))]" data-icon={tool.icon} />
           </div>
 
           {/* Name + description */}

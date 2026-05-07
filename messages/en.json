@@ -421,6 +421,7 @@
     "browserNotSupported": "Your browser does not support this feature.",
     "invalidPageRange": "Invalid page range specified.",
     "invalidOptions": "Invalid options provided.",
+    "invalidPassword": "The password you entered is incorrect. Please check and try again.",
     "unknown": "An unexpected error occurred. Please try again.",
     "toolNotFound": "Tool Not Found"
   },

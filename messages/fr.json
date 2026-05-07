@@ -398,6 +398,7 @@
     "browserNotSupported": "Votre navigateur ne prend pas en charge cette fonctionnalité.",
     "invalidPageRange": "Plage de pages invalide spécifiée.",
     "invalidOptions": "Options invalides fournies.",
+    "invalidPassword": "The password you entered is incorrect.",
     "unknown": "Une erreur inattendue s'est produite. Veuillez réessayer.",
     "toolNotFound": "Tool Not Found"
   },

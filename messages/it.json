@@ -411,6 +411,7 @@
     "browserNotSupported": "Il tuo browser non supporta questa funzione.",
     "invalidPageRange": "Intervallo di pagine non valido.",
     "invalidOptions": "Opzioni non valide fornite.",
+    "invalidPassword": "La password inserita non è corretta.",
     "unknown": "Si è verificato un errore imprevisto. Riprova.",
     "toolNotFound": "Strumento non trovato"
   },

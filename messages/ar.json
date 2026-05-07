@@ -443,6 +443,7 @@
     "browserNotSupported": "متصفحك لا يدعم هذه الميزة.",
     "invalidPageRange": "نطاق الصفحات المحدد غير صالح.",
     "invalidOptions": "تم تقديم خيارات غير صالحة.",
+    "invalidPassword": "The password you entered is incorrect.",
     "unknown": "حدث خطأ غير متوقع. يرجى المحاولة مرة أخرى.",
     "toolNotFound": "الأداة غير موجودة"
   },

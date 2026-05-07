@@ -398,6 +398,7 @@
     "browserNotSupported": "Tu navegador no soporta esta función.",
     "invalidPageRange": "Rango de páginas inválido especificado.",
     "invalidOptions": "Opciones inválidas proporcionadas.",
+    "invalidPassword": "The password you entered is incorrect.",
     "unknown": "Ocurrió un error inesperado. Por favor intenta de nuevo.",
     "toolNotFound": "Tool Not Found"
   },
