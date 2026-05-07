@@ -7,7 +7,6 @@ import { Card } from '@/components/ui/Card';
 import { ArrowRight } from 'lucide-react';
 import { getToolIcon } from '@/config/icons';
 import { POPULAR_TOOL_IDS } from '@/config/tools';
-import { FavoriteButton } from '@/components/ui/FavoriteButton';
 import { ToolBadge, type BadgeVariant } from '@/components/ui/ToolBadge';
 
 export interface ToolCardProps {
@@ -60,16 +59,12 @@ export function ToolCard({ tool, locale, className = '', localizedContent, badge
         className="h-full bg-[hsl(var(--color-card))] hover:shadow-md transition-all duration-200 hover:-translate-y-0.5 relative overflow-hidden border border-[hsl(var(--color-border))]"
         data-testid="tool-card-container"
       >
-        {/* Badge top-right */}
+        {/* Badge top-right — purple star pill, no separate favorite star */}
         {resolvedBadge && (
-          <div className="absolute top-3 right-10 z-10">
+          <div className="absolute top-3 right-3 z-10">
             <ToolBadge variant={resolvedBadge} />
           </div>
         )}
-
-        <div className="absolute top-2.5 right-2.5 z-10">
-          <FavoriteButton toolId={tool.id} size="sm" />
-        </div>
 
         <div className="p-4 flex flex-col gap-3">
           {/* Icon */}
