@@ -1,6 +1,6 @@
 -- PDFaro tool_events table
--- Run once against your PostgreSQL database.
--- Compatible with Supabase, Railway, Neon, and self-hosted Postgres.
+-- Run this once in the Supabase SQL Editor (or any PostgreSQL database).
+-- After running, go to Table Editor > tool_events > RLS is already enabled below.
 
 CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 
@@ -29,3 +29,14 @@ CREATE INDEX IF NOT EXISTS idx_tool_events_tool_name   ON tool_events (tool_name
 CREATE INDEX IF NOT EXISTS idx_tool_events_event_type  ON tool_events (event_type);
 CREATE INDEX IF NOT EXISTS idx_tool_events_created_at  ON tool_events (created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_tool_events_session_id  ON tool_events (session_id);
+
+-- Row Level Security
+-- Allows the anon key (used by the browser) to INSERT only.
+-- Nobody can read, update, or delete rows via the public API.
+ALTER TABLE tool_events ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "anon can insert tool events"
+  ON tool_events
+  FOR INSERT
+  TO anon
+  WITH CHECK (true);

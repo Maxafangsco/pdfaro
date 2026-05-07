@@ -19,6 +19,20 @@ export interface BackendEventPayload {
   errorMessage?: string | null;
 }
 
+// Supabase column names (snake_case) for PostgREST
+interface SupabaseRow {
+  session_id: string;
+  user_id: string | null;
+  tool_name: string;
+  event_type: BackendEventType;
+  file_type?: string | null;
+  file_size?: number | null;
+  file_count?: number | null;
+  processing_time_ms?: number | null;
+  success?: boolean | null;
+  error_message?: string | null;
+}
+
 const ALLOWED_EVENT_TYPES: BackendEventType[] = [
   'tool_started',
   'tool_completed',
@@ -32,44 +46,77 @@ const ALLOWED_EVENT_TYPES: BackendEventType[] = [
 export function sanitizeError(message: unknown): string {
   if (!message) return '';
   const str = String(message)
-    .split('\n')[0]   // first line only — no stack trace
-    .replace(/at .+/g, '')  // remove "at ..." frames
+    .split('\n')[0]
+    .replace(/at .+/g, '')
     .trim()
-    .slice(0, 200);   // cap at 200 chars
+    .slice(0, 200);
   return str;
 }
 
 /**
- * Fire-and-forget: send a business event to the configured backend endpoint.
- * If the endpoint is not configured or the call fails, this is a no-op.
- *
- * Configure via: NEXT_PUBLIC_EVENTS_ENDPOINT=https://your-backend/events/tool
+ * Fire-and-forget: insert a business event into Supabase via PostgREST.
+ * Requires NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY.
+ * Falls back to NEXT_PUBLIC_EVENTS_ENDPOINT for custom backends.
+ * No-op if neither is configured.
  */
 export function sendBackendEvent(
   eventType: BackendEventType,
   payload: Omit<BackendEventPayload, 'sessionId' | 'userId' | 'eventType' | 'toolName'> & { toolName: string }
 ): void {
-  const endpoint = process.env.NEXT_PUBLIC_EVENTS_ENDPOINT;
-  if (!endpoint) return;
   if (!ALLOWED_EVENT_TYPES.includes(eventType)) return;
 
-  const body: BackendEventPayload = {
-    sessionId: getOrCreateSessionId(),
-    userId: null, // attach when auth is implemented
-    eventType,
-    ...payload,
-  };
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  const customEndpoint = process.env.NEXT_PUBLIC_EVENTS_ENDPOINT;
+
+  if (!supabaseUrl && !customEndpoint) return;
+
+  const sessionId = getOrCreateSessionId();
 
   try {
-    fetch(endpoint, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body),
-      keepalive: true, // survives page unload
-    }).catch(() => {
-      // Silently ignore network errors — never block the user
-    });
+    if (supabaseUrl && supabaseKey) {
+      // Supabase PostgREST — snake_case column names
+      const row: SupabaseRow = {
+        session_id: sessionId,
+        user_id: null,
+        tool_name: payload.toolName,
+        event_type: eventType,
+        file_type: payload.fileType ?? null,
+        file_size: payload.fileSize ?? null,
+        file_count: payload.fileCount ?? null,
+        processing_time_ms: payload.processingTimeMs ?? null,
+        success: payload.success ?? null,
+        error_message: payload.errorMessage ?? null,
+      };
+
+      fetch(`${supabaseUrl}/rest/v1/tool_events`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': supabaseKey,
+          'Authorization': `Bearer ${supabaseKey}`,
+          'Prefer': 'return=minimal',
+        },
+        body: JSON.stringify(row),
+        keepalive: true,
+      }).catch(() => {});
+    } else if (customEndpoint) {
+      // Custom backend — camelCase body as before
+      const body: BackendEventPayload = {
+        sessionId,
+        userId: null,
+        eventType,
+        ...payload,
+      };
+
+      fetch(customEndpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+        keepalive: true,
+      }).catch(() => {});
+    }
   } catch {
-    // fetch itself threw (SSR / unsupported env) — ignore
+    // fetch threw (SSR / unsupported env) — ignore
   }
 }

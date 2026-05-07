@@ -1,7 +1,8 @@
 'use client';
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useRef } from 'react';
 import { useTranslations } from 'next-intl';
+import { trackToolStarted, trackToolCompleted } from '@/lib/analytics';
 import { FileUploader } from '../FileUploader';
 import { ProcessingProgress } from '../ProcessingProgress';
 import { DownloadButton } from '../DownloadButton';
@@ -34,6 +35,8 @@ export function CompressPDFTool({ className = '' }: CompressPDFToolProps) {
   const [optimizeImages, setOptimizeImages] = useState(true);
   const [photonDpi, setPhotonDpi] = useState(150);
   const [error, setError] = useState<string | null>(null);
+  const startTimeRef = useRef<number>(0);
+  const trackedCompletionRef = useRef(false);
 
   // Batch processing hook
   const {
@@ -109,8 +112,18 @@ export function CompressPDFTool({ className = '' }: CompressPDFToolProps) {
       return;
     }
     setError(null);
+    startTimeRef.current = Date.now();
+    trackedCompletionRef.current = false;
+    try {
+      trackToolStarted({
+        toolName: 'compress-pdf',
+        fileType: 'application/pdf',
+        fileSize: files.reduce((sum, f) => sum + f.file.size, 0),
+        fileCount: files.length,
+      });
+    } catch { /* analytics must never block the user */ }
     await startProcessing(compressProcessor);
-  }, [files.length, startProcessing, compressProcessor]);
+  }, [files, startProcessing, compressProcessor]);
 
   /**
    * Handle download as ZIP
@@ -148,6 +161,18 @@ export function CompressPDFTool({ className = '' }: CompressPDFToolProps) {
   const canCompress = hasFiles && !isProcessing;
   const hasCompletedFiles = completedCount > 0;
   const allCompleted = hasFiles && completedCount === files.length;
+
+  if (allCompleted && !trackedCompletionRef.current) {
+    trackedCompletionRef.current = true;
+    try {
+      trackToolCompleted({
+        toolName: 'compress-pdf',
+        processingTimeMs: Date.now() - startTimeRef.current,
+        fileCount: completedCount,
+        outputType: 'pdf',
+      });
+    } catch { /* analytics must never block the user */ }
+  }
 
   return (
     <div className={`space-y-6 ${className}`.trim()}>
