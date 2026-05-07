@@ -164,17 +164,11 @@ export const ProcessingProgress: React.FC<ProcessingProgressProps> = ({
         />
       </div>
 
-      {/* Footer row: page count + time */}
+      {/* Footer row: time + cancel */}
       <div className="flex items-center justify-between text-xs text-[hsl(var(--color-muted-foreground))]">
         <span>
-          {status === 'complete' && (
-            <span className="text-green-600 dark:text-green-400 font-medium">Complete</span>
-          )}
-          {status === 'error' && (
-            <span className="text-red-500 font-medium">Error</span>
-          )}
           {(status === 'uploading' || status === 'processing') && showEstimatedTime && formattedTime && (
-            <span>Est. {formattedTime}</span>
+            <span>{formattedTime}</span>
           )}
         </span>
         {showCancel && (

@@ -12,7 +12,7 @@ import {
 vi.mock('next-intl', () => ({
   useTranslations: () => (key: string) => {
     const translations: Record<string, string> = {
-      'brand': 'PDFCraft',
+      'brand': 'PDFaro',
       'tagline': 'Professional PDF Tools - Free & Private',
       'navigation.home': 'Home',
       'navigation.tools': 'Tools',
@@ -22,7 +22,7 @@ vi.mock('next-intl', () => ({
       'navigation.contact': 'Contact',
       'buttons.selectLanguage': 'Select Language',
       'buttons.close': 'Close',
-      'footer.copyright': '© {year} PDFCraft. All rights reserved.',
+      'footer.copyright': '© {year} PDFaro. All rights reserved.',
       'footer.privacyBadge': '100% Private - Files never leave your device',
     };
     return translations[key] || key;
@@ -59,21 +59,23 @@ describe('Layout Property Tests', () => {
    * **Validates: Requirements 2.1**
    * 
    * For any rendered page in the application, the page content 
-   * SHALL contain the brand name "PDFCraft" in the header or title area.
+   * SHALL contain the brand name "PDFaro" in the header or title area.
    */
   describe('Property 2: Brand Consistency', () => {
-    it('Header component displays PDFCraft brand name for all locales', () => {
+    it('Header component displays PDFaro brand name for all locales', () => {
       fc.assert(
         fc.property(
           fc.constantFrom(...locales),
           (locale) => {
             const { unmount } = render(<Header locale={locale} />);
-            
-            // Find the brand name in the header
-            const brandElement = screen.getByTestId('brand-name');
-            expect(brandElement).toBeInTheDocument();
-            expect(brandElement.textContent).toBe('PDFCraft');
-            
+
+            // Logo is now an <img> — check the link wrapper and image alt
+            const brandLink = screen.getByTestId('brand-name');
+            expect(brandLink).toBeInTheDocument();
+            const img = brandLink.querySelector('img');
+            expect(img).not.toBeNull();
+            expect(img?.getAttribute('alt')).toBe('PDFaro');
+
             unmount();
             return true;
           }
@@ -82,18 +84,20 @@ describe('Layout Property Tests', () => {
       );
     });
 
-    it('Footer component displays PDFCraft brand name for all locales', () => {
+    it('Footer component displays PDFaro brand name for all locales', () => {
       fc.assert(
         fc.property(
           fc.constantFrom(...locales),
           (locale) => {
             const { unmount } = render(<Footer locale={locale} />);
-            
-            // Find the brand name in the footer
-            const brandElement = screen.getByTestId('footer-brand-name');
-            expect(brandElement).toBeInTheDocument();
-            expect(brandElement.textContent).toBe('PDFCraft');
-            
+
+            // Logo is now an <img> — check the link wrapper and image alt
+            const brandLink = screen.getByTestId('footer-brand-name');
+            expect(brandLink).toBeInTheDocument();
+            const img = brandLink.querySelector('img');
+            expect(img).not.toBeNull();
+            expect(img?.getAttribute('alt')).toBe('PDFaro');
+
             unmount();
             return true;
           }
@@ -107,22 +111,19 @@ describe('Layout Property Tests', () => {
         fc.property(
           fc.constantFrom(...locales),
           (locale) => {
-            // Render Header
             const { unmount: unmountHeader } = render(<Header locale={locale} />);
-            const headerBrand = screen.getByTestId('brand-name');
-            const headerBrandText = headerBrand.textContent;
+            const headerImg = screen.getByTestId('brand-name').querySelector('img');
+            const headerBrandText = headerImg?.getAttribute('alt') ?? '';
             unmountHeader();
-            
-            // Render Footer
+
             const { unmount: unmountFooter } = render(<Footer locale={locale} />);
-            const footerBrand = screen.getByTestId('footer-brand-name');
-            const footerBrandText = footerBrand.textContent;
+            const footerImg = screen.getByTestId('footer-brand-name').querySelector('img');
+            const footerBrandText = footerImg?.getAttribute('alt') ?? '';
             unmountFooter();
-            
-            // Brand should be consistent
+
             expect(headerBrandText).toBe(footerBrandText);
-            expect(headerBrandText).toBe('PDFCraft');
-            
+            expect(headerBrandText).toBe('PDFaro');
+
             return true;
           }
         ),

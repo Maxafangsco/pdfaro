@@ -177,15 +177,28 @@ export const Header: React.FC<HeaderProps> = ({ locale, showSearch = true }) => 
           {/* Logo */}
           <Link
             href={`/${locale}`}
-            className="group flex items-center gap-2 font-bold text-[hsl(var(--color-foreground))] hover:opacity-90 transition-opacity shrink-0"
+            className="group shrink-0 transition-opacity hover:opacity-85"
             aria-label={`${t('brand')} - ${t('navigation.home')}`}
+            data-testid="brand-name"
           >
-            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-[hsl(var(--color-primary))] shadow-sm transition-transform group-hover:scale-105">
-              <span className="text-white text-xs font-bold tracking-tighter">PF</span>
-            </div>
-            <span className="text-base font-semibold tracking-tight" data-testid="brand-name">
-              {t('brand')}
-            </span>
+            {/* Light mode: mono-light (dark mark + dark text on light bg) */}
+            <img
+              src="/images/svg/aperture-lockup-mono-light.svg"
+              alt={t('brand')}
+              width={120}
+              height={32}
+              className="h-8 w-auto block dark:hidden"
+              draggable={false}
+            />
+            {/* Dark mode: mono-dark (white mark + white text on dark bg) */}
+            <img
+              src="/images/svg/aperture-lockup-mono-dark.svg"
+              alt={t('brand')}
+              width={120}
+              height={32}
+              className="h-8 w-auto hidden dark:block"
+              draggable={false}
+            />
           </Link>
 
           {/* Desktop Navigation */}

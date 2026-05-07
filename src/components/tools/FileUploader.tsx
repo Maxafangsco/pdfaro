@@ -307,17 +307,31 @@ export const FileUploader: React.FC<FileUploaderProps> = ({
 
       {/* Label */}
       <p className="text-base font-semibold text-[hsl(var(--color-foreground))] mb-1.5 text-center">
-        {label || (isDragging ? t('fileUploader.dropToUpload') : 'Drop your PDF here or click to browse')}
+        {label || 'Drag and drop files here or click to browse'}
       </p>
 
       {/* Description / size hint */}
-      <p className="text-xs text-[hsl(var(--color-muted-foreground))] text-center mb-5">
+      <p className="text-xs text-[hsl(var(--color-muted-foreground))] text-center mb-2">
         {description || (
           maxSize !== Infinity
-            ? `Up to ${Math.round(maxSize / 1024 / 1024)} MB · ${multiple ? 'Single or multiple files' : 'Single file'}`
-            : (multiple ? 'Single or multiple files' : 'Single file')
+            ? `Up to ${Math.round(maxSize / 1024 / 1024)}MB · ${multiple ? 'Multiple files' : 'Single file'}`
+            : (multiple ? 'Multiple files' : 'Single file')
         )}
       </p>
+
+      {/* File type info */}
+      {accept && accept.length > 0 && (
+        <p className="text-xs text-[hsl(var(--color-muted-foreground))] text-center mb-1">
+          {accept.join(', ')}
+        </p>
+      )}
+
+      {/* Max files info */}
+      {multiple && maxFiles && (
+        <p className="text-xs text-[hsl(var(--color-muted-foreground))] text-center mb-4">
+          Max files: {maxFiles}
+        </p>
+      )}
 
       {/* Select button */}
       <button
@@ -336,7 +350,7 @@ export const FileUploader: React.FC<FileUploaderProps> = ({
         <div className="absolute inset-0 flex flex-col items-center justify-center bg-[hsl(var(--color-primary)/0.06)] rounded-2xl z-10 pointer-events-none">
           <Plus className="w-8 h-8 text-[hsl(var(--color-primary))] mb-2" aria-hidden="true" />
           <p className="text-sm font-semibold text-[hsl(var(--color-primary))]">
-            {t('fileUploader.dropToUpload')}
+            Drop files here
           </p>
         </div>
       )}
