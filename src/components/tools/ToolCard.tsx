@@ -6,6 +6,7 @@ import { Tool, ToolCategory } from '@/types/tool';
 import { Card } from '@/components/ui/Card';
 import { ArrowRight } from 'lucide-react';
 import { getToolIcon } from '@/config/icons';
+import { POPULAR_TOOL_IDS } from '@/config/tools';
 import { FavoriteButton } from '@/components/ui/FavoriteButton';
 import { ToolBadge, type BadgeVariant } from '@/components/ui/ToolBadge';
 
@@ -47,7 +48,7 @@ export function ToolCard({ tool, locale, className = '', localizedContent, badge
 
   const IconComponent = getToolIcon(tool.icon);
 
-  const resolvedBadge: BadgeVariant | null = badge ?? (tool.isPopular ? 'popular' : tool.isNew ? 'new' : null);
+  const resolvedBadge: BadgeVariant | null = badge ?? (POPULAR_TOOL_IDS.includes(tool.id) ? 'popular' : null);
 
   return (
     <Link
