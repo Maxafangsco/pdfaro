@@ -46,14 +46,16 @@ export const Footer: React.FC<FooterProps> = ({ locale }) => {
               aria-label={`${t('brand')} - ${t('navigation.home')}`}
               data-testid="footer-brand-name"
             >
+              {/* Light mode: mono-light (dark mark + dark text on light bg) */}
               <img
-                src="/images/svg/aperture-lockup.svg"
+                src="/images/svg/aperture-lockup-mono-light.svg"
                 alt={t('brand')}
                 width={110}
                 height={29}
                 className="h-7 w-auto block dark:hidden"
                 draggable={false}
               />
+              {/* Dark mode: mono-dark (white mark + white text on dark bg) */}
               <img
                 src="/images/svg/aperture-lockup-mono-dark.svg"
                 alt={t('brand')}

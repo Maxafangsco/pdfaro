@@ -181,15 +181,16 @@ export const Header: React.FC<HeaderProps> = ({ locale, showSearch = true }) => 
             aria-label={`${t('brand')} - ${t('navigation.home')}`}
             data-testid="brand-name"
           >
-            {/* Light mode: colour lockup; dark mode: mono-dark lockup */}
+            {/* Light mode: mono-light (dark mark + dark text on light bg) */}
             <img
-              src="/images/svg/aperture-lockup.svg"
+              src="/images/svg/aperture-lockup-mono-light.svg"
               alt={t('brand')}
               width={120}
               height={32}
               className="h-8 w-auto block dark:hidden"
               draggable={false}
             />
+            {/* Dark mode: mono-dark (white mark + white text on dark bg) */}
             <img
               src="/images/svg/aperture-lockup-mono-dark.svg"
               alt={t('brand')}
