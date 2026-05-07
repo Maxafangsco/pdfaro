@@ -9,6 +9,7 @@ import { Footer } from '@/components/layout/Footer';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { type Locale } from '@/lib/i18n/config';
+import posthog from 'posthog-js';
 
 interface ContactPageClientProps {
   locale: Locale;
@@ -65,6 +66,9 @@ export default function ContactPageClient({ locale }: ContactPageClientProps) {
 
     // For demo purposes, always succeed
     setFormStatus('success');
+    try {
+      posthog.capture('contact_form_submitted', { subject: formData.subject });
+    } catch { /* analytics must never block the user */ }
     setFormData({ name: '', email: '', subject: '', message: '' });
   };
 

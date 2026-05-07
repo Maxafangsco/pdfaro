@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { mergePDFs } from '@/lib/pdf';
 import type { MergeOptions, UploadedFile, ProcessOutput } from '@/types/pdf';
+import { trackToolStarted, trackToolCompleted, trackProcessingFailed } from '@/lib/analytics';
 
 /**
  * Generate a unique ID for files
@@ -47,6 +48,7 @@ export function MergePDFTool({ className = '' }: MergePDFToolProps) {
   
   // Ref for cancellation
   const cancelledRef = useRef(false);
+  const startTimeRef = useRef<number>(0);
 
   /**
    * Handle files selected from uploader
@@ -161,6 +163,16 @@ export function MergePDFTool({ className = '' }: MergePDFToolProps) {
     setError(null);
     setResult(null);
 
+    startTimeRef.current = Date.now();
+    try {
+      trackToolStarted({
+        toolName: 'merge-pdf',
+        fileType: 'application/pdf',
+        fileSize: files.reduce((sum, f) => sum + f.file.size, 0),
+        fileCount: files.length,
+      });
+    } catch { /* analytics must never block the user */ }
+
     const options: MergeOptions = {
       preserveBookmarks,
       pageOrder: 'sequential',
@@ -186,14 +198,32 @@ export function MergePDFTool({ className = '' }: MergePDFToolProps) {
       if (output.success && output.result) {
         setResult(output.result as Blob);
         setStatus('complete');
+        try {
+          trackToolCompleted({
+            toolName: 'merge-pdf',
+            processingTimeMs: Date.now() - startTimeRef.current,
+            fileCount: files.length,
+            outputType: 'pdf',
+          });
+        } catch { /* analytics must never block the user */ }
       } else {
         setError(output.error?.message || 'Failed to merge PDF files.');
         setStatus('error');
+        try {
+          trackProcessingFailed({
+            toolName: 'merge-pdf',
+            errorMessage: output.error?.message,
+          });
+        } catch { /* analytics must never block the user */ }
       }
     } catch (err) {
       if (!cancelledRef.current) {
-        setError(err instanceof Error ? err.message : 'An unexpected error occurred.');
+        const msg = err instanceof Error ? err.message : 'An unexpected error occurred.';
+        setError(msg);
         setStatus('error');
+        try {
+          trackProcessingFailed({ toolName: 'merge-pdf', errorMessage: msg });
+        } catch { /* analytics must never block the user */ }
       }
     }
   }, [files, preserveBookmarks]);

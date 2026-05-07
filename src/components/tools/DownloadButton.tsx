@@ -6,6 +6,7 @@ import { Button, type ButtonProps } from '../ui/Button';
 import { addRecentFile } from '@/lib/storage/recent-files';
 import { useToolContext } from '@/lib/contexts/ToolContext';
 import { sanitizeFilename } from '@/lib/utils/sanitize';
+import { trackDownloadClicked } from '@/lib/analytics';
 
 export interface DownloadButtonProps extends Omit<ButtonProps, 'onClick' | 'children'> {
   /** Blob data to download */
@@ -96,6 +97,12 @@ export const DownloadButton: React.FC<DownloadButtonProps> = ({
 
     setIsDownloading(true);
     onDownloadStart?.();
+
+    // Track download — output type derived from filename extension
+    try {
+      const ext = filename.split('.').pop() ?? 'pdf';
+      trackDownloadClicked(toolName || toolSlug || 'unknown', ext);
+    } catch { /* analytics must never block the user */ }
 
     // Sanitize filename to prevent path traversal
     const safeFilename = sanitizeFilename(filename, 'download.pdf');
