@@ -33,33 +33,22 @@ export const Footer: React.FC<FooterProps> = ({ locale }) => {
 
   return (
     <footer
-      className="w-full border-t border-[hsl(var(--color-border))] bg-[hsl(var(--color-background))] pt-16 pb-8"
+      className="w-full border-t border-[hsl(var(--color-border))] bg-[hsl(var(--color-background))] pt-12 pb-8"
       role="contentinfo"
     >
-      <div className="container mx-auto px-4">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-12 mb-12">
+      <div className="container mx-auto px-4 lg:px-6">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-10 mb-10">
           {/* Brand Column */}
-          <div className="col-span-1 md:col-span-1 flex flex-col gap-6">
+          <div className="col-span-1 md:col-span-1 flex flex-col gap-5">
             <Link
               href={`/${locale}`}
-              className="group flex items-center gap-2.5 text-xl font-bold text-[hsl(var(--color-foreground))]"
+              className="group flex items-center gap-2 font-bold text-[hsl(var(--color-foreground))]"
               aria-label={`${t('brand')} - ${t('navigation.home')}`}
             >
-              <div className="relative flex h-8 w-8 items-center justify-center rounded-lg bg-[hsl(var(--color-primary))] text-white shadow-md transition-transform group-hover:scale-105">
-                <svg
-                  className="h-5 w-5"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2.5"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z" />
-                  <polyline points="14 2 14 8 20 8" />
-                </svg>
+              <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-[hsl(var(--color-primary))] text-white shadow-sm transition-transform group-hover:scale-105">
+                <span className="text-xs font-bold tracking-tighter">PF</span>
               </div>
-              <span data-testid="footer-brand-name">{t('brand')}</span>
+              <span className="text-base font-semibold tracking-tight" data-testid="footer-brand-name">{t('brand')}</span>
             </Link>
             <p className="text-sm text-[hsl(var(--color-muted-foreground))] leading-relaxed max-w-xs">
               {t('tagline') || 'Professional, secure, and free PDF tools for everyone. No installation required.'}
