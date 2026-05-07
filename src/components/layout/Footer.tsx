@@ -42,23 +42,36 @@ export const Footer: React.FC<FooterProps> = ({ locale }) => {
           <div className="col-span-1 md:col-span-1 flex flex-col gap-5">
             <Link
               href={`/${locale}`}
-              className="group flex items-center gap-2 font-bold text-[hsl(var(--color-foreground))]"
+              className="group transition-opacity hover:opacity-85 inline-block"
               aria-label={`${t('brand')} - ${t('navigation.home')}`}
+              data-testid="footer-brand-name"
             >
-              <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-[hsl(var(--color-primary))] text-white shadow-sm transition-transform group-hover:scale-105">
-                <span className="text-xs font-bold tracking-tighter">PF</span>
-              </div>
-              <span className="text-base font-semibold tracking-tight" data-testid="footer-brand-name">{t('brand')}</span>
+              <img
+                src="/images/svg/aperture-lockup.svg"
+                alt={t('brand')}
+                width={110}
+                height={29}
+                className="h-7 w-auto block dark:hidden"
+                draggable={false}
+              />
+              <img
+                src="/images/svg/aperture-lockup-mono-dark.svg"
+                alt={t('brand')}
+                width={110}
+                height={29}
+                className="h-7 w-auto hidden dark:block"
+                draggable={false}
+              />
             </Link>
             <p className="text-sm text-[hsl(var(--color-muted-foreground))] leading-relaxed max-w-xs">
               {t('tagline') || 'Professional, secure, and free PDF tools for everyone. No installation required.'}
             </p>
 
             <div className="flex gap-4">
-              <a href="https://github.com/PDFCraftTool/pdfcraft" className="p-2 rounded-full bg-[hsl(var(--color-muted))] text-[hsl(var(--color-muted-foreground))] hover:bg-[hsl(var(--color-primary))] hover:text-white transition-all">
+              <a href="https://github.com/PDFaroTool/pdfaro" className="p-2 rounded-full bg-[hsl(var(--color-muted))] text-[hsl(var(--color-muted-foreground))] hover:bg-[hsl(var(--color-primary))] hover:text-white transition-all">
                 <Github className="w-4 h-4" />
               </a>
-              <a href="https://x.com/PDFCraftTool" className="p-2 rounded-full bg-[hsl(var(--color-muted))] text-[hsl(var(--color-muted-foreground))] hover:bg-[hsl(var(--color-primary))] hover:text-white transition-all">
+              <a href="https://x.com/PDFaroTool" className="p-2 rounded-full bg-[hsl(var(--color-muted))] text-[hsl(var(--color-muted-foreground))] hover:bg-[hsl(var(--color-primary))] hover:text-white transition-all">
                 <Twitter className="w-4 h-4" />
               </a>
               <a href="#" className="p-2 rounded-full bg-[hsl(var(--color-muted))] text-[hsl(var(--color-muted-foreground))] hover:bg-[hsl(var(--color-primary))] hover:text-white transition-all">
