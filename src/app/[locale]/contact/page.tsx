@@ -4,6 +4,7 @@ import { locales, type Locale } from '@/lib/i18n/config';
 import { generateContactMetadata } from '@/lib/seo';
 import ContactPageClient from './ContactPageClient';
 
+export const dynamicParams = false;
 export function generateStaticParams() {
   return locales.map((locale) => ({ locale }));
 }

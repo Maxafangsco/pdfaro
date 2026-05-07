@@ -4,6 +4,7 @@ import { locales, type Locale } from '@/lib/i18n/config';
 import { generatePrivacyMetadata } from '@/lib/seo';
 import PrivacyPageClient from './PrivacyPageClient';
 
+export const dynamicParams = false;
 export function generateStaticParams() {
   return locales.map((locale) => ({ locale }));
 }

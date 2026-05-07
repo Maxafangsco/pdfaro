@@ -4,6 +4,7 @@ import { TOOL_CATEGORIES, type ToolCategory } from '@/types/tool';
 import CategoryPageClient from './CategoryPageClient';
 import { notFound } from 'next/navigation';
 
+export const dynamicParams = false;
 export function generateStaticParams() {
     return locales.flatMap((locale) =>
         TOOL_CATEGORIES.map((category) => ({

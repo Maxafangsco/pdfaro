@@ -83,10 +83,10 @@ export default function HomePageClient({ locale, localizedToolContent }: HomePag
 
   // Quick-action chips matching the Figma design
   const quickActions = [
-    { label: 'Merge PDF', href: `/${locale}/tools/merge` },
-    { label: 'Compress', href: `/${locale}/tools/compress` },
+    { label: 'Merge PDF', href: `/${locale}/tools/merge-pdf` },
+    { label: 'Compress', href: `/${locale}/tools/compress-pdf` },
     { label: 'PDF to Word', href: `/${locale}/tools/pdf-to-docx` },
-    { label: 'Sign', href: `/${locale}/tools/sign` },
+    { label: 'Sign', href: `/${locale}/tools/sign-pdf` },
     { label: 'Edit', href: `/${locale}/tools/edit-pdf` },
   ];
 

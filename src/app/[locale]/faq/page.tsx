@@ -4,6 +4,7 @@ import { locales, type Locale } from '@/lib/i18n/config';
 import { generateFaqMetadata } from '@/lib/seo';
 import FAQPageClient from './FAQPageClient';
 
+export const dynamicParams = false;
 export function generateStaticParams() {
   return locales.map((locale) => ({ locale }));
 }
