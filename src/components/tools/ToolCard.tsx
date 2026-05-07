@@ -8,6 +8,7 @@ import { ArrowRight } from 'lucide-react';
 import { getToolIcon } from '@/config/icons';
 import { POPULAR_TOOL_IDS } from '@/config/tools';
 import { ToolBadge, type BadgeVariant } from '@/components/ui/ToolBadge';
+import { trackToolClicked } from '@/lib/analytics';
 
 export interface ToolCardProps {
   tool: Tool;
@@ -54,6 +55,13 @@ export function ToolCard({ tool, locale, className = '', localizedContent, badge
       href={toolUrl}
       className={`block focus:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--color-ring))] focus-visible:ring-offset-2 rounded-xl group ${className}`}
       data-testid="tool-card"
+      onClick={() => {
+        trackToolClicked({
+          toolName: toolName,
+          toolCategory: tool.category,
+          sourcePage: 'tools_directory',
+        });
+      }}
     >
       <Card
         className="h-full bg-[hsl(var(--color-card))] hover:shadow-md transition-all duration-200 hover:-translate-y-0.5 relative overflow-hidden border border-[hsl(var(--color-border))]"

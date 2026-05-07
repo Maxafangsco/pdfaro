@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from 'next';
+import { Suspense } from 'react';
 import { NextIntlClientProvider } from 'next-intl';
 import { getMessages, setRequestLocale, getTranslations } from 'next-intl/server';
 import { notFound } from 'next/navigation';
@@ -6,6 +7,7 @@ import { localeConfig, type Locale, locales } from '@/lib/i18n/config';
 import { generateHomeMetadata } from '@/lib/seo';
 import { fontVariables } from '@/lib/fonts';
 import { SkipLink } from '@/components/common/SkipLink';
+import { PostHogProvider } from '@/components/analytics/PostHogProvider';
 import '@/app/globals.css';
 
 export function generateStaticParams() {
@@ -72,6 +74,10 @@ export default async function LocaleLayout({
     <NextIntlClientProvider messages={messages}>
       <div lang={locale} dir={direction} className={`${fontVariables} min-h-screen bg-background text-foreground antialiased font-sans`}>
         <SkipLink targetId="main-content">Skip to main content</SkipLink>
+        {/* PostHogProvider uses useSearchParams — must be inside Suspense for static export */}
+        <Suspense fallback={null}>
+          <PostHogProvider locale={locale} />
+        </Suspense>
         {children}
       </div>
     </NextIntlClientProvider>

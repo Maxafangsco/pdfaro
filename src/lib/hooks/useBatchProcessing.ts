@@ -8,6 +8,7 @@
 'use client';
 
 import { useState, useCallback, useRef } from 'react';
+import { trackToolStarted, trackToolCompleted, trackProcessingFailed } from '@/lib/analytics';
 
 export interface BatchFile {
   id: string;
@@ -88,6 +89,7 @@ export function useBatchProcessing(options: BatchProcessingOptions = {}): UseBat
       
       setIsProcessing(true);
       cancelledRef.current = false;
+      const startTime = Date.now();
 
       const pendingFiles = files.filter((f) => f.status === 'pending');
       const queue = [...pendingFiles];
@@ -99,6 +101,16 @@ export function useBatchProcessing(options: BatchProcessingOptions = {}): UseBat
         updateFile(batchFile.id, { status: 'processing', progress: 0 });
 
         try {
+          // Track processing start (once per batch file)
+          try {
+            trackToolStarted({
+              toolName: 'batch',
+              fileType: batchFile.file.type || 'application/pdf',
+              fileSize: batchFile.file.size,
+              fileCount: pendingFiles.length,
+            });
+          } catch { /* analytics must never block processing */ }
+
           const result = await processor(batchFile.file, (progress) => {
             updateFile(batchFile.id, { progress });
           });
@@ -117,13 +129,33 @@ export function useBatchProcessing(options: BatchProcessingOptions = {}): UseBat
           });
 
           onFileComplete?.(completedFile);
+
+          // Track completion
+          try {
+            trackToolCompleted({
+              toolName: 'batch',
+              processingTimeMs: Date.now() - startTime,
+              fileCount: 1,
+              outputType: result.type || 'application/pdf',
+            });
+          } catch { /* analytics must never block processing */ }
+
         } catch (err) {
           const error = err instanceof Error ? err : new Error('Processing failed');
-          
+
           updateFile(batchFile.id, {
             status: 'error',
             error: error.message,
           });
+
+          // Track failure
+          try {
+            trackProcessingFailed({
+              toolName: 'batch',
+              errorMessage: error.message,
+              step: 'processing',
+            });
+          } catch { /* analytics must never block processing */ }
 
           onError?.({ ...batchFile, status: 'error', error: error.message }, error);
         }

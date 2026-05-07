@@ -3,6 +3,8 @@
 import React, { useCallback, useRef, useState, useEffect } from 'react';
 import { useTranslations } from 'next-intl';
 import { UploadCloud, File, Plus, X } from 'lucide-react';
+import { trackFileUploaded } from '@/lib/analytics';
+import { useToolContext } from '@/lib/contexts/ToolContext';
 
 export interface FileUploaderProps {
   /** Accepted file types (MIME types or extensions) */
@@ -48,6 +50,8 @@ export const FileUploader: React.FC<FileUploaderProps> = ({
 }) => {
   const t = useTranslations('common');
   const tErrors = useTranslations('errors');
+  const toolContext = useToolContext();
+  const toolName = toolContext?.toolName ?? 'unknown';
 
   const [isDragging, setIsDragging] = useState(false);
   const [dragCounter, setDragCounter] = useState(0);
@@ -134,8 +138,18 @@ export const FileUploader: React.FC<FileUploaderProps> = ({
 
     if (valid.length > 0) {
       onFilesSelected(valid);
+      // Track upload — file names are never sent, only type/size/count
+      try {
+        const first = valid[0];
+        trackFileUploaded({
+          toolName: toolName || 'unknown',
+          fileType: first.type || 'application/octet-stream',
+          fileSize: valid.reduce((sum, f) => sum + f.size, 0),
+          fileCount: valid.length,
+        });
+      } catch { /* analytics must never block the user */ }
     }
-  }, [disabled, validateFiles, onError, onFilesSelected]);
+  }, [disabled, validateFiles, onError, onFilesSelected, toolName]);
 
   /**
    * Handle drag enter
