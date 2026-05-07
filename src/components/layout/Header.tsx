@@ -177,28 +177,33 @@ export const Header: React.FC<HeaderProps> = ({ locale, showSearch = true }) => 
           {/* Logo */}
           <Link
             href={`/${locale}`}
-            className="group shrink-0 transition-opacity hover:opacity-85"
+            className="group flex items-center gap-2 shrink-0 hover:opacity-85 transition-opacity"
             aria-label={`${t('brand')} - ${t('navigation.home')}`}
             data-testid="brand-name"
           >
-            {/* Light mode: mono-light (dark mark + dark text on light bg) */}
+            {/* Light: dark bg + white P mark */}
             <img
-              src="/images/svg/aperture-lockup-mono-light.svg"
-              alt={t('brand')}
-              width={120}
-              height={32}
-              className="h-8 w-auto block dark:hidden"
+              src="/images/svg/aperture-mark-mono-black.svg"
+              alt=""
+              width={28}
+              height={28}
+              className="h-7 w-7 block dark:hidden"
               draggable={false}
+              aria-hidden="true"
             />
-            {/* Dark mode: mono-dark (white mark + white text on dark bg) */}
+            {/* Dark: gradient blue bg + white P mark */}
             <img
-              src="/images/svg/aperture-lockup-mono-dark.svg"
-              alt={t('brand')}
-              width={120}
-              height={32}
-              className="h-8 w-auto hidden dark:block"
+              src="/images/svg/aperture-mark.svg"
+              alt=""
+              width={28}
+              height={28}
+              className="h-7 w-7 hidden dark:block"
               draggable={false}
+              aria-hidden="true"
             />
+            <span className="text-base font-semibold tracking-tight text-[hsl(var(--color-foreground))]">
+              {t('brand')}
+            </span>
           </Link>
 
           {/* Desktop Navigation */}

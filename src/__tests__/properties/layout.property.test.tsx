@@ -69,12 +69,11 @@ describe('Layout Property Tests', () => {
           (locale) => {
             const { unmount } = render(<Header locale={locale} />);
 
-            // Logo is now an <img> — check the link wrapper and image alt
+            // Icon mark is decorative (alt=""); brand name is in the sibling <span>
             const brandLink = screen.getByTestId('brand-name');
             expect(brandLink).toBeInTheDocument();
-            const img = brandLink.querySelector('img');
-            expect(img).not.toBeNull();
-            expect(img?.getAttribute('alt')).toBe('PDFaro');
+            const span = brandLink.querySelector('span');
+            expect(span?.textContent).toBe('PDFaro');
 
             unmount();
             return true;
@@ -91,12 +90,11 @@ describe('Layout Property Tests', () => {
           (locale) => {
             const { unmount } = render(<Footer locale={locale} />);
 
-            // Logo is now an <img> — check the link wrapper and image alt
+            // Icon mark is decorative (alt=""); brand name is in the sibling <span>
             const brandLink = screen.getByTestId('footer-brand-name');
             expect(brandLink).toBeInTheDocument();
-            const img = brandLink.querySelector('img');
-            expect(img).not.toBeNull();
-            expect(img?.getAttribute('alt')).toBe('PDFaro');
+            const span = brandLink.querySelector('span');
+            expect(span?.textContent).toBe('PDFaro');
 
             unmount();
             return true;
@@ -112,13 +110,11 @@ describe('Layout Property Tests', () => {
           fc.constantFrom(...locales),
           (locale) => {
             const { unmount: unmountHeader } = render(<Header locale={locale} />);
-            const headerImg = screen.getByTestId('brand-name').querySelector('img');
-            const headerBrandText = headerImg?.getAttribute('alt') ?? '';
+            const headerBrandText = screen.getByTestId('brand-name').querySelector('span')?.textContent ?? '';
             unmountHeader();
 
             const { unmount: unmountFooter } = render(<Footer locale={locale} />);
-            const footerImg = screen.getByTestId('footer-brand-name').querySelector('img');
-            const footerBrandText = footerImg?.getAttribute('alt') ?? '';
+            const footerBrandText = screen.getByTestId('footer-brand-name').querySelector('span')?.textContent ?? '';
             unmountFooter();
 
             expect(headerBrandText).toBe(footerBrandText);

@@ -42,28 +42,33 @@ export const Footer: React.FC<FooterProps> = ({ locale }) => {
           <div className="col-span-1 md:col-span-1 flex flex-col gap-5">
             <Link
               href={`/${locale}`}
-              className="group transition-opacity hover:opacity-85 inline-block"
+              className="group flex items-center gap-2 hover:opacity-85 transition-opacity"
               aria-label={`${t('brand')} - ${t('navigation.home')}`}
               data-testid="footer-brand-name"
             >
-              {/* Light mode: mono-light (dark mark + dark text on light bg) */}
+              {/* Light: dark bg + white P mark */}
               <img
-                src="/images/svg/aperture-lockup-mono-light.svg"
-                alt={t('brand')}
-                width={110}
-                height={29}
-                className="h-7 w-auto block dark:hidden"
+                src="/images/svg/aperture-mark-mono-black.svg"
+                alt=""
+                width={28}
+                height={28}
+                className="h-7 w-7 block dark:hidden"
                 draggable={false}
+                aria-hidden="true"
               />
-              {/* Dark mode: mono-dark (white mark + white text on dark bg) */}
+              {/* Dark: gradient blue bg + white P mark */}
               <img
-                src="/images/svg/aperture-lockup-mono-dark.svg"
-                alt={t('brand')}
-                width={110}
-                height={29}
-                className="h-7 w-auto hidden dark:block"
+                src="/images/svg/aperture-mark.svg"
+                alt=""
+                width={28}
+                height={28}
+                className="h-7 w-7 hidden dark:block"
                 draggable={false}
+                aria-hidden="true"
               />
+              <span className="text-base font-semibold tracking-tight text-[hsl(var(--color-foreground))]">
+                {t('brand')}
+              </span>
             </Link>
             <p className="text-sm text-[hsl(var(--color-muted-foreground))] leading-relaxed max-w-xs">
               {t('tagline') || 'Professional, secure, and free PDF tools for everyone. No installation required.'}
