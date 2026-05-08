@@ -377,4 +377,42 @@ describe('SEO Property Tests', () => {
       expect(alternates['x-default']).toContain('en');
     });
   });
+
+  describe('Site Config', () => {
+    it('siteConfig.url points to production domain', async () => {
+      const { siteConfig } = await import('@/config/site');
+      expect(siteConfig.url).toBe('https://www.pdfaro.com');
+    });
+
+    it('siteConfig.name is PDFaro', async () => {
+      const { siteConfig } = await import('@/config/site');
+      expect(siteConfig.name).toBe('PDFaro');
+    });
+
+    it('siteConfig.url does not have a trailing slash', async () => {
+      const { siteConfig } = await import('@/config/site');
+      expect(siteConfig.url).not.toMatch(/\/$/);
+    });
+  });
+
+  describe('i18n Config', () => {
+    it('all locales are unique', () => {
+      const unique = new Set(locales);
+      expect(unique.size).toBe(locales.length);
+    });
+
+    it('default locale is en', async () => {
+      const { defaultLocale } = await import('@/lib/i18n/config');
+      expect(defaultLocale).toBe('en');
+    });
+
+    it('en locale is included', () => {
+      expect(locales).toContain('en');
+    });
+
+    it('canonical URLs use the production domain', () => {
+      const url = getCanonicalUrl('en', '/tools/merge-pdf');
+      expect(url).toContain('pdfaro.com');
+    });
+  });
 });
