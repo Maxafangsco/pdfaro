@@ -4,6 +4,7 @@ import { locales, type Locale } from '@/lib/i18n/config';
 import { generateAboutMetadata } from '@/lib/seo';
 import AboutPageClient from './AboutPageClient';
 
+export const dynamicParams = false;
 export function generateStaticParams() {
   return locales.map((locale) => ({ locale }));
 }
