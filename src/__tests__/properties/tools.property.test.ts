@@ -342,12 +342,62 @@ describe('Tool Configuration Property Tests', () => {
             expect(Array.isArray(tool.features)).toBe(true);
             expect(tool.features.length).toBeGreaterThan(0);
             expect(Array.isArray(tool.relatedTools)).toBe(true);
-            
+
             return true;
           }
         ),
         { numRuns: 100 }
       );
+    });
+  });
+
+  describe('Tool Slug Integrity', () => {
+    it('every tool slug is unique', () => {
+      const slugs = tools.map(t => t.slug);
+      const unique = new Set(slugs);
+      expect(unique.size).toBe(slugs.length);
+    });
+
+    it('every tool slug is URL-safe (lowercase letters, numbers, hyphens only)', () => {
+      for (const tool of tools) {
+        expect(tool.slug).toMatch(/^[a-z0-9-]+$/);
+      }
+    });
+
+    it('no tool slug starts or ends with a hyphen', () => {
+      for (const tool of tools) {
+        expect(tool.slug).not.toMatch(/^-/);
+        expect(tool.slug).not.toMatch(/-$/);
+      }
+    });
+  });
+
+  describe('getToolById edge cases', () => {
+    it('returns undefined for a non-existent id', () => {
+      expect(getToolById('this-does-not-exist')).toBeUndefined();
+    });
+
+    it('returns undefined for empty string', () => {
+      expect(getToolById('')).toBeUndefined();
+    });
+
+    it('is case-sensitive — uppercase id returns undefined', () => {
+      const first = getAllTools()[0];
+      expect(getToolById(first.id.toUpperCase())).toBeUndefined();
+    });
+  });
+
+  describe('getAllTools filters disabled tools', () => {
+    it('returns no tools with disabled: true', () => {
+      const enabled = getAllTools();
+      for (const tool of enabled) {
+        expect(tool.disabled).toBeFalsy();
+      }
+    });
+
+    it('getAllToolsIncludingDisabled returns at least as many tools as getAllTools', async () => {
+      const { getAllToolsIncludingDisabled } = await import('@/config/tools');
+      expect(getAllToolsIncludingDisabled().length).toBeGreaterThanOrEqual(getAllTools().length);
     });
   });
 });

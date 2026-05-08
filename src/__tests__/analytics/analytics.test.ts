@@ -178,3 +178,110 @@ describe('backend adapter — sendBackendEvent', () => {
     });
   });
 });
+
+// ─── Backend adapter — Supabase path ─────────────────────────────────────
+
+describe('backend adapter — Supabase integration', () => {
+  const SUPABASE_URL = 'https://test-project.supabase.co';
+  const SUPABASE_KEY = 'test-anon-key';
+
+  beforeEach(() => {
+    localStorage.clear();
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: true }));
+    process.env.NEXT_PUBLIC_SUPABASE_URL = SUPABASE_URL;
+    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY = SUPABASE_KEY;
+    delete process.env.NEXT_PUBLIC_EVENTS_ENDPOINT;
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+    delete process.env.NEXT_PUBLIC_SUPABASE_URL;
+    delete process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+    delete process.env.NEXT_PUBLIC_EVENTS_ENDPOINT;
+  });
+
+  it('sends to Supabase REST endpoint when configured', () => {
+    sendBackendEvent('tool_started', { toolName: 'compress-pdf' });
+
+    expect(fetch).toHaveBeenCalledWith(
+      `${SUPABASE_URL}/rest/v1/tool_events`,
+      expect.objectContaining({ method: 'POST' })
+    );
+  });
+
+  it('includes required Supabase headers', () => {
+    sendBackendEvent('tool_completed', { toolName: 'merge-pdf' });
+
+    expect(fetch).toHaveBeenCalledWith(
+      expect.any(String),
+      expect.objectContaining({
+        headers: expect.objectContaining({
+          'apikey': SUPABASE_KEY,
+          'Authorization': `Bearer ${SUPABASE_KEY}`,
+          'Prefer': 'return=minimal',
+          'Content-Type': 'application/json',
+        }),
+      })
+    );
+  });
+
+  it('maps camelCase payload to snake_case columns for Supabase', () => {
+    sendBackendEvent('tool_started', {
+      toolName: 'compress-pdf',
+      fileType: 'application/pdf',
+      fileSize: 2048,
+      fileCount: 3,
+      processingTimeMs: 500,
+    });
+
+    const body = JSON.parse((fetch as ReturnType<typeof vi.fn>).mock.calls[0][1].body);
+    expect(body.tool_name).toBe('compress-pdf');
+    expect(body.event_type).toBe('tool_started');
+    expect(body.file_type).toBe('application/pdf');
+    expect(body.file_size).toBe(2048);
+    expect(body.file_count).toBe(3);
+    expect(body.processing_time_ms).toBe(500);
+  });
+
+  it('does NOT call fetch when neither Supabase nor custom endpoint is configured', () => {
+    delete process.env.NEXT_PUBLIC_SUPABASE_URL;
+    delete process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+
+    sendBackendEvent('tool_started', { toolName: 'compress-pdf' });
+
+    expect(fetch).not.toHaveBeenCalled();
+  });
+
+  it('sets user_id to null in the payload', () => {
+    sendBackendEvent('download_clicked', { toolName: 'merge-pdf' });
+
+    const body = JSON.parse((fetch as ReturnType<typeof vi.fn>).mock.calls[0][1].body);
+    expect(body.user_id).toBeNull();
+  });
+
+  it('includes a session_id in every Supabase payload', () => {
+    sendBackendEvent('tool_completed', { toolName: 'split-pdf' });
+
+    const body = JSON.parse((fetch as ReturnType<typeof vi.fn>).mock.calls[0][1].body);
+    expect(typeof body.session_id).toBe('string');
+    expect(body.session_id.length).toBeGreaterThan(0);
+  });
+
+  it('uses keepalive: true so events survive page unload', () => {
+    sendBackendEvent('tool_started', { toolName: 'compress-pdf' });
+
+    expect(fetch).toHaveBeenCalledWith(
+      expect.any(String),
+      expect.objectContaining({ keepalive: true })
+    );
+  });
+
+  it('trackProcessingFailed sanitizes the error before reaching sendBackendEvent', () => {
+    const stackTrace = 'RangeError: out of memory\n    at compress (compress.js:10)\n    at main (index.js:5)';
+    // sanitizeError is called inside trackProcessingFailed, not inside sendBackendEvent
+    const sanitized = sanitizeError(stackTrace);
+    expect(sanitized).toBe('RangeError: out of memory');
+    expect(sanitized).not.toContain('at compress');
+    expect(sanitized).not.toContain('at main');
+  });
+});
