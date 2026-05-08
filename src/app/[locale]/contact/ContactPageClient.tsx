@@ -34,21 +34,21 @@ export default function ContactPageClient({ locale }: ContactPageClientProps) {
       title: t('methods.email.title'),
       description: t('methods.email.description'),
       action: t('methods.email.action'),
-      href: 'mailto:contact@pdfcraft.gitu.net',
+      href: 'mailto:resilinker@gmail.com',
     },
     {
       icon: Github,
       title: t('methods.github.title'),
       description: t('methods.github.description'),
       action: t('methods.github.action'),
-      href: 'https://github.com/PDFaroTool/pdfcraft',
+      href: 'https://github.com',
     },
     {
       icon: Twitter,
       title: t('methods.twitter.title'),
       description: t('methods.twitter.description'),
       action: t('methods.twitter.action'),
-      href: 'https://x.com/PDFaroTool',
+      href: 'https://x.com',
     },
   ];
 
@@ -92,7 +92,7 @@ export default function ContactPageClient({ locale }: ContactPageClientProps) {
         </section>
 
         {/* Contact Methods */}
-        <section className="py-12">
+        {/* <section className="py-12">
           <div className="container mx-auto px-4">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-4xl mx-auto">
               {contactMethods.map((method, index) => {
@@ -124,7 +124,7 @@ export default function ContactPageClient({ locale }: ContactPageClientProps) {
               })}
             </div>
           </div>
-        </section>
+        </section> */}
 
         {/* Contact Form */}
         <section className="py-12 bg-[hsl(var(--color-muted)/0.3)]">
