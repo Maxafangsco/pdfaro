@@ -17,12 +17,11 @@ export default function robots(): MetadataRoute.Robots {
       {
         userAgent: '*',
         allow: '/',
-        disallow: [
-          '/api/',
-          '/_next/',
-          '/static/',
-        ],
+        disallow: ['/api/', '/_next/', '/static/'],
       },
+      { userAgent: 'GPTBot', allow: '/' },
+      { userAgent: 'ClaudeBot', allow: '/' },
+      { userAgent: 'PerplexityBot', allow: '/' },
     ],
     sitemap: `${siteConfig.url}/sitemap.xml`,
   };

@@ -4,7 +4,7 @@
 export const siteConfig = {
   name: 'PDFaro',
   description: 'Professional PDF Tools - Free, Private & Browser-Based. Merge, split, compress, convert, and edit PDF files online without uploading to servers.',
-  url: 'https://pdfaro.app',
+  url: 'https://www.pdfaro.com',
   ogImage: '/images/png/lockup-color-960.png',
   links: {
     github: 'https://github.com/PDFaroTool/pdfaro',

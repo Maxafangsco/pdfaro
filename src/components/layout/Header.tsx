@@ -4,7 +4,7 @@ import React, { useState, useCallback, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { Search, Menu, X, LogIn } from 'lucide-react';
+import { Search, Menu, X } from 'lucide-react';
 import { type Locale } from '@/lib/i18n/config';
 import { Button } from '@/components/ui/Button';
 import { RecentFilesDropdown } from '@/components/common/RecentFilesDropdown';
@@ -320,15 +320,6 @@ export const Header: React.FC<HeaderProps> = ({ locale, showSearch = true }) => 
 
             {/* Language Selector slot */}
             <div id="language-selector-slot" />
-
-            {/* Sign in — desktop only */}
-            <Link
-              href={`/${locale}/about`}
-              className="hidden md:inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-[hsl(var(--color-foreground))] hover:bg-[hsl(var(--color-muted))] rounded-lg transition-colors"
-            >
-              <LogIn className="h-4 w-4" aria-hidden="true" />
-              Sign in
-            </Link>
 
             {/* Get started CTA — desktop only */}
             <Link
