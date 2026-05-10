@@ -25,6 +25,7 @@ jobs:
   # Stage 1: Build images for each platform in parallel using native runners
   # ============================================================================
   build:
+    if: false  # Disabled — Docker builds are not needed for the current deployment target (Vercel)
     runs-on: ${{ matrix.runner }}
     
     outputs:
@@ -104,7 +105,7 @@ jobs:
   # ============================================================================
   merge:
     runs-on: ubuntu-latest
-    if: github.event_name != 'pull_request'
+    if: false  # Disabled — kept for reference, re-enable alongside the build job if Docker is needed
     needs: build
     
     permissions:

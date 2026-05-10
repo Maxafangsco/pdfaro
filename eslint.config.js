@@ -1,26 +1,49 @@
 // ESLint v9 flat config
-// Uses the compatibility layer to wrap the legacy eslint-config-next format.
+// Uses the compatibility layer to wrap the legacy eslint-config-next format,
+// then explicitly registers @typescript-eslint so inline disable comments work.
 import { FlatCompat } from '@eslint/eslintrc';
+import tsPlugin from '@typescript-eslint/eslint-plugin';
+import tsParser from '@typescript-eslint/parser';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const compat = new FlatCompat({
-  baseDirectory: __dirname,
-});
+const compat = new FlatCompat({ baseDirectory: __dirname });
 
 export default [
+  // ── Next.js core rules ────────────────────────────────────────────────────
   ...compat.extends('next/core-web-vitals'),
+
+  // ── TypeScript plugin (needed so @typescript-eslint/* rules are recognised)
+  {
+    files: ['**/*.ts', '**/*.tsx'],
+    plugins: {
+      '@typescript-eslint': tsPlugin,
+    },
+    languageOptions: {
+      parser: tsParser,
+      parserOptions: {
+        project: false, // skip type-aware linting — too slow for CI without tsconfig paths
+      },
+    },
+    rules: {
+      // Downgrade to warn so pre-existing `any` usages don't block the build
+      '@typescript-eslint/no-explicit-any': 'warn',
+    },
+  },
+
+  // ── General rule overrides ────────────────────────────────────────────────
   {
     rules: {
-      // Allow empty catch blocks (used for analytics guard pattern)
+      // Allow empty catch blocks (used for analytics guard pattern throughout the app)
       'no-empty': ['error', { allowEmptyCatch: true }],
     },
   },
+
+  // ── Ignore build artefacts and generated files ────────────────────────────
   {
-    // Ignore build artifacts and generated files
     ignores: [
       '.next/**',
       'out/**',
