@@ -139,13 +139,27 @@ describe('POST /api/contact', () => {
     expect(json.error).toMatch(/not configured/i);
   });
 
-  it('returns 500 when Resend API call fails', async () => {
+  it('returns 500 when Resend API call fails with a transient error', async () => {
+    // Use a 500 from Resend to simulate a transient send failure.
+    // (403 is reserved for the config-error / unverified-domain path → returns 503.)
     mockFetch.mockResolvedValue(
-      new Response(JSON.stringify({ name: 'missing_api_key' }), { status: 403 })
+      new Response(JSON.stringify({ name: 'internal_server_error' }), { status: 500 })
     );
     const { status, json } = await callRoute(VALID_BODY);
     expect(status).toBe(500);
     expect(json.error).toMatch(/failed/i);
+  });
+
+  it('returns 503 when CONTACT_FROM_EMAIL is not a verified Resend domain (403)', async () => {
+    mockFetch.mockResolvedValue(
+      new Response(
+        JSON.stringify({ name: 'validation_error', message: 'The gmail.com domain is not verified.' }),
+        { status: 403 }
+      )
+    );
+    const { status, json } = await callRoute(VALID_BODY);
+    expect(status).toBe(503);
+    expect(json.error).toMatch(/not configured/i);
   });
 
   it('returns 400 for non-JSON body', async () => {

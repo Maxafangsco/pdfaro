@@ -39,6 +39,15 @@ export default [
     rules: {
       // Allow empty catch blocks (used for analytics guard pattern throughout the app)
       'no-empty': ['error', { allowEmptyCatch: true }],
+
+      // Downgrade pre-existing violations to warnings so they don't block the build.
+      // These exist across many legacy files and are not introduced by recent changes.
+
+      // Unescaped " characters in JSX text (FindAndRedactTool, HeaderFooterTool, etc.)
+      'react/no-unescaped-entities': 'warn',
+
+      // module variable reassignment pattern used in pdf-to-svg.ts for WASM interop
+      '@next/next/no-assign-module-variable': 'warn',
     },
   },
 

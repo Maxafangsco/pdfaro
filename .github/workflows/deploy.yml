@@ -26,6 +26,7 @@ concurrency:
 jobs:
   # Build job
   build:
+    if: false  # Disabled — app is deployed via Vercel; GitHub Pages deployment is not in use
     runs-on: ubuntu-latest
     steps:
       # Checkout the repository
@@ -77,6 +78,7 @@ jobs:
 
   # Deployment job
   deploy:
+    if: false  # Disabled — kept for reference alongside the build job above
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}

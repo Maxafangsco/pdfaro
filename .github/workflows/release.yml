@@ -21,6 +21,7 @@ concurrency:
 
 jobs:
   build-and-release:
+    if: false  # Disabled — static export removed; app is deployed via Vercel, not GitHub Releases
     runs-on: ubuntu-latest
     
     permissions:
