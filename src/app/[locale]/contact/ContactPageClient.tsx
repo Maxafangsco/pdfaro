@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
-import { Mail, MessageSquare, Github, Twitter, Send, CheckCircle, AlertCircle } from 'lucide-react';
+import { MessageSquare, Send, CheckCircle, AlertCircle } from 'lucide-react';
 import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
 import { Button } from '@/components/ui/Button';
@@ -21,6 +21,7 @@ export default function ContactPageClient({ locale }: ContactPageClientProps) {
   const t = useTranslations('contactPage');
   const tCommon = useTranslations('common');
   const [formStatus, setFormStatus] = useState<FormStatus>('idle');
+  const [serverError, setServerError] = useState<string>('');
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -28,48 +29,54 @@ export default function ContactPageClient({ locale }: ContactPageClientProps) {
     message: '',
   });
 
-  const contactMethods = [
-    {
-      icon: Mail,
-      title: t('methods.email.title'),
-      description: t('methods.email.description'),
-      action: t('methods.email.action'),
-      href: 'mailto:resilinker@gmail.com',
-    },
-    {
-      icon: Github,
-      title: t('methods.github.title'),
-      description: t('methods.github.description'),
-      action: t('methods.github.action'),
-      href: 'https://github.com',
-    },
-    {
-      icon: Twitter,
-      title: t('methods.twitter.title'),
-      description: t('methods.twitter.description'),
-      action: t('methods.twitter.action'),
-      href: 'https://x.com',
-    },
-  ];
+  const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+  const isFormValid =
+    formData.name.trim().length > 0 &&
+    EMAIL_RE.test(formData.email.trim()) &&
+    formData.subject.trim().length > 0 &&
+    formData.message.trim().length >= 10;
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+  const handleInputChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
+  ) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setFormStatus('submitting');
+    setServerError('');
 
-    // Simulate form submission (in a real app, this would send to an API)
-    await new Promise(resolve => setTimeout(resolve, 1500));
+    // Collect honeypot value from the hidden field (bots fill it, humans don't)
+    const form = e.currentTarget;
+    const honeypotField = form.querySelector<HTMLInputElement>('input[name="_hp"]');
+    const honeypot = honeypotField?.value ?? '';
 
-    // For demo purposes, always succeed
-    setFormStatus('success');
     try {
-      posthog.capture('contact_form_submitted', { subject: formData.subject });
-    } catch { /* analytics must never block the user */ }
-    setFormData({ name: '', email: '', subject: '', message: '' });
+      const res = await fetch('/api/contact', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...formData, _hp: honeypot }),
+      });
+
+      const json = (await res.json()) as { success?: boolean; error?: string };
+
+      if (!res.ok || !json.success) {
+        setServerError(json.error ?? t('form.error'));
+        setFormStatus('error');
+        return;
+      }
+
+      setFormStatus('success');
+      try {
+        posthog.capture('contact_form_submitted', { subject: formData.subject });
+      } catch { /* analytics must never block the user */ }
+      setFormData({ name: '', email: '', subject: '', message: '' });
+    } catch {
+      setServerError(t('form.error'));
+      setFormStatus('error');
+    }
   };
 
   return (
@@ -90,41 +97,6 @@ export default function ContactPageClient({ locale }: ContactPageClientProps) {
             </div>
           </div>
         </section>
-
-        {/* Contact Methods */}
-        {/* <section className="py-12">
-          <div className="container mx-auto px-4">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-4xl mx-auto">
-              {contactMethods.map((method, index) => {
-                const Icon = method.icon;
-                return (
-                  <a
-                    key={index}
-                    href={method.href}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="block"
-                  >
-                    <Card className="p-6 h-full text-center" hover>
-                      <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-[hsl(var(--color-primary)/0.1)] mb-4">
-                        <Icon className="h-6 w-6 text-[hsl(var(--color-primary))]" />
-                      </div>
-                      <h3 className="font-semibold text-[hsl(var(--color-foreground))] mb-2">
-                        {method.title}
-                      </h3>
-                      <p className="text-sm text-[hsl(var(--color-muted-foreground))] mb-4">
-                        {method.description}
-                      </p>
-                      <span className="text-sm font-medium text-[hsl(var(--color-primary))]">
-                        {method.action}
-                      </span>
-                    </Card>
-                  </a>
-                );
-              })}
-            </div>
-          </div>
-        </section> */}
 
         {/* Contact Form */}
         <section className="py-12 bg-[hsl(var(--color-muted)/0.3)]">
@@ -156,7 +128,33 @@ export default function ContactPageClient({ locale }: ContactPageClientProps) {
                 </Card>
               ) : (
                 <Card className="p-6 md:p-8">
-                  <form onSubmit={handleSubmit} className="space-y-6">
+                  <form onSubmit={handleSubmit} className="space-y-6" noValidate>
+                    {/*
+                      Honeypot field — visually hidden from real users.
+                      Bots that auto-fill every input will populate it; we silently
+                      reject those submissions server-side.
+                      aria-hidden prevents screen readers from announcing it.
+                    */}
+                    <div
+                      aria-hidden="true"
+                      style={{
+                        position: 'absolute',
+                        left: '-9999px',
+                        width: '1px',
+                        height: '1px',
+                        overflow: 'hidden',
+                      }}
+                    >
+                      <label htmlFor="_hp">Leave this field blank</label>
+                      <input
+                        type="text"
+                        id="_hp"
+                        name="_hp"
+                        tabIndex={-1}
+                        autoComplete="off"
+                      />
+                    </div>
+
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <div>
                         <label
@@ -240,10 +238,13 @@ export default function ContactPageClient({ locale }: ContactPageClientProps) {
                     </div>
 
                     {formStatus === 'error' && (
-                      <div className="flex items-center gap-2 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700">
+                      <div
+                        role="alert"
+                        className="flex items-center gap-2 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700"
+                      >
                         <AlertCircle className="h-5 w-5 flex-shrink-0" />
                         <p className="text-sm">
-                          {t('form.error')}
+                          {serverError || t('form.error')}
                         </p>
                       </div>
                     )}
@@ -253,7 +254,7 @@ export default function ContactPageClient({ locale }: ContactPageClientProps) {
                       variant="primary"
                       className="w-full"
                       loading={formStatus === 'submitting'}
-                      disabled={formStatus === 'submitting'}
+                      disabled={!isFormValid || formStatus === 'submitting'}
                     >
                       {formStatus === 'submitting' ? t('form.submit.loading') : t('form.submit.default')}
                       {formStatus !== 'submitting' && <Send className="ml-2 h-4 w-4" />}

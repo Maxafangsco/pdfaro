@@ -9,8 +9,10 @@ const withNextIntl = createNextIntlPlugin('./src/i18n/request.ts');
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // Enable static export for deployment flexibility
-  output: 'export',
+  // Static export is only needed for Tauri desktop builds.
+  // On Vercel the build runs without TAURI_ENV, so output stays undefined and
+  // serverless API routes (e.g. /api/contact) are fully supported.
+  ...(process.env.TAURI_ENV ? { output: 'export' } : {}),
   assetPrefix: process.env.TAURI_ENV ? '/' : undefined,
 
   // Webpack configuration for WASM modules
