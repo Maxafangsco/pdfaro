@@ -1,6 +1,8 @@
 'use client';
 
+import { useState, useCallback } from 'react';
 import { useTranslations } from 'next-intl';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowRight, Zap, Wrench, Lock, Sparkles, Edit, FileImage, FolderOpen, Settings, ShieldCheck, Star, Workflow } from 'lucide-react';
 import { Header } from '@/components/layout/Header';
@@ -27,8 +29,17 @@ interface HomePageClientProps {
 
 export default function HomePageClient({ locale, localizedToolContent }: HomePageClientProps) {
   const t = useTranslations();
+  const router = useRouter();
   const allTools = getAllTools();
   const popularTools = getPopularTools();
+
+  const [heroSearch, setHeroSearch] = useState('');
+
+  const handleHeroSearch = useCallback((e: React.FormEvent) => {
+    e.preventDefault();
+    const q = heroSearch.trim();
+    router.push(`/${locale}/tools${q ? `?q=${encodeURIComponent(q)}` : ''}`);
+  }, [heroSearch, locale, router]);
 
   // Feature highlights (same as before)
   const features = [
@@ -121,27 +132,30 @@ export default function HomePageClient({ locale, localizedToolContent }: HomePag
               </p>
 
               {/* Search bar */}
-              <div className="relative max-w-md mx-auto mb-5">
+              <form
+                onSubmit={handleHeroSearch}
+                className="relative max-w-md mx-auto mb-5"
+                role="search"
+                aria-label="Search PDF tools"
+              >
                 <input
                   type="search"
+                  value={heroSearch}
+                  onChange={(e) => setHeroSearch(e.target.value)}
                   placeholder="Search PDF tools..."
-                  readOnly
-                  onClick={() => {
-                    /* header search will open on Cmd+K */
-                  }}
-                  className="w-full pl-10 pr-24 py-3 text-sm rounded-xl border border-[hsl(var(--color-border))] bg-[hsl(var(--color-card))] shadow-sm focus:outline-none focus:ring-2 focus:ring-[hsl(var(--color-primary))/0.3] cursor-pointer"
+                  className="w-full pl-10 pr-24 py-3 text-sm rounded-xl border border-[hsl(var(--color-border))] bg-[hsl(var(--color-card))] shadow-sm focus:outline-none focus:ring-2 focus:ring-[hsl(var(--color-primary))/0.3]"
                   aria-label="Search PDF tools"
                 />
-                <svg className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-[hsl(var(--color-muted-foreground))]" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24" aria-hidden="true">
+                <svg className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-[hsl(var(--color-muted-foreground))] pointer-events-none" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24" aria-hidden="true">
                   <circle cx="11" cy="11" r="8" /><path d="M21 21l-4.35-4.35" strokeLinecap="round" />
                 </svg>
-                <Link
-                  href={`/${locale}/tools`}
+                <button
+                  type="submit"
                   className="absolute right-1.5 top-1/2 -translate-y-1/2 px-3 py-1.5 text-xs font-semibold text-white bg-[hsl(var(--color-primary))] hover:bg-[hsl(var(--color-primary-hover))] rounded-lg transition-colors"
                 >
                   Search
-                </Link>
-              </div>
+                </button>
+              </form>
 
               {/* Quick-action chips */}
               <div className="flex flex-wrap justify-center gap-2 mb-8" role="list" aria-label="Quick actions">

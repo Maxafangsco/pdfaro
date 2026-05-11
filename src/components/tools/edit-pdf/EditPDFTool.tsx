@@ -12,7 +12,7 @@ export interface EditPDFToolProps {
 
 /**
  * EditPDFTool Component
- * 
+ *
  * Provides PDF editing capabilities using PDF.js viewer with annotation support.
  * Users can add text, draw, highlight, and add images to PDFs.
  * The PDF.js viewer has built-in save functionality (export button in toolbar).
@@ -20,12 +20,12 @@ export interface EditPDFToolProps {
 export function EditPDFTool({ className = '' }: EditPDFToolProps) {
   const t = useTranslations('common');
   const tTools = useTranslations('tools.editPdf');
-  
+
   const [file, setFile] = useState<File | null>(null);
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isEditorReady, setIsEditorReady] = useState(false);
-  
+
   const iframeRef = useRef<HTMLIFrameElement>(null);
 
   const handleFilesSelected = useCallback((files: File[]) => {
@@ -61,24 +61,21 @@ export function EditPDFTool({ className = '' }: EditPDFToolProps) {
           const secondaryDownloadBtn = doc.getElementById('secondaryDownload');
           if (downloadBtn) downloadBtn.style.display = 'none';
           if (secondaryDownloadBtn) secondaryDownloadBtn.style.display = 'none';
-          
+
           // Hide save button from CustomToolbar (pdfjs-annotation-extension)
-          // The button has text "保存" (Save in Chinese) - exact match only
           const customToolbar = doc.querySelector('.CustomToolbar');
           if (customToolbar) {
             const buttons = customToolbar.querySelectorAll('li, button');
             buttons.forEach((btn: Element) => {
               const text = btn.textContent?.trim();
-              // Only hide if the text is exactly "保存" or "Save"
               if (text === '保存' || text === 'Save') {
                 (btn as HTMLElement).style.display = 'none';
               }
             });
           }
         }
-      } catch (e) {
+      } catch {
         // Cross-origin restrictions may prevent access
-        console.warn('Could not access iframe content to hide save button');
       }
     }, 1000);
   }, []);

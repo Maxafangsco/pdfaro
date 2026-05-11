@@ -350,7 +350,13 @@ export const FileUploader: React.FC<FileUploaderProps> = ({
       {/* Select button */}
       <button
         type="button"
-        onClick={handleClick}
+        onClick={(e) => {
+          // Prevent bubbling to the parent dropzone onClick.
+          // Double-triggering input.click() can cause the chooser to immediately close or be ignored.
+          e.preventDefault();
+          e.stopPropagation();
+          handleClick();
+        }}
         disabled={disabled}
         className="px-5 py-2 text-sm font-semibold text-white bg-[hsl(var(--color-primary))] hover:bg-[hsl(var(--color-primary-hover))] rounded-lg transition-colors shadow-sm disabled:opacity-50"
         tabIndex={-1}
