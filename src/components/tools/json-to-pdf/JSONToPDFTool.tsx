@@ -207,6 +207,7 @@ export function JSONToPDFTool({ className = '' }: JSONToPDFToolProps) {
         <div 
           className="p-4 rounded-[var(--radius-md)] bg-red-50 border border-red-200 text-red-700"
           role="alert"
+          data-testid="error-alert"
         >
           <p className="text-sm">{error}</p>
         </div>
@@ -217,6 +218,7 @@ export function JSONToPDFTool({ className = '' }: JSONToPDFToolProps) {
         <div 
           className="p-4 rounded-[var(--radius-md)] bg-yellow-50 border border-yellow-200 text-yellow-700"
           role="alert"
+          data-testid="error-alert"
         >
           <p className="text-sm font-medium">Invalid JSON</p>
           <p className="text-sm mt-1">{parseError}</p>

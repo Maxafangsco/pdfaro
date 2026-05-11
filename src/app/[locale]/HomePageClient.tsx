@@ -137,12 +137,14 @@ export default function HomePageClient({ locale, localizedToolContent }: HomePag
                 className="relative max-w-md mx-auto mb-5"
                 role="search"
                 aria-label="Search PDF tools"
+                data-testid="hero-search-form"
               >
                 <input
                   type="search"
                   value={heroSearch}
                   onChange={(e) => setHeroSearch(e.target.value)}
                   placeholder="Search PDF tools..."
+                  data-testid="hero-search-input"
                   className="w-full pl-10 pr-24 py-3 text-sm rounded-xl border border-[hsl(var(--color-border))] bg-[hsl(var(--color-card))] shadow-sm focus:outline-none focus:ring-2 focus:ring-[hsl(var(--color-primary))/0.3]"
                   aria-label="Search PDF tools"
                 />

@@ -127,6 +127,7 @@ export const ProcessingProgress: React.FC<ProcessingProgressProps> = ({
   return (
     <div
       className={`w-full rounded-xl border border-[hsl(var(--color-border))] bg-[hsl(var(--color-card))] p-4 ${className}`.trim()}
+      data-testid="processing-progress"
       role="progressbar"
       aria-valuenow={clampedProgress}
       aria-valuemin={0}

@@ -168,7 +168,7 @@ export function PDFToPptxTool({ className = '' }: PDFToPptxToolProps) {
             {error && (
                 <div
                     className="p-4 rounded-xl bg-red-50/50 border border-red-200 text-red-700 flex items-start gap-3 animate-in fade-in slide-in-from-top-2"
-                    role="alert"
+                    role="alert" data-testid="error-alert"
                 >
                     <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
                     <p className="text-sm font-medium">{error}</p>

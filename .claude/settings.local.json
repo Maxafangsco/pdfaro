@@ -1,0 +1,39 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(grep -E \"package\\\\.json$\")",
+      "Bash(git checkout *)",
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)",
+      "Bash(npx tsc *)",
+      "Bash(node_modules/.bin/tsc --noEmit)",
+      "Bash(./node_modules/.bin/tsc --noEmit)",
+      "Bash(node node_modules/typescript/bin/tsc --noEmit)",
+      "Bash(npm install *)",
+      "Bash(npm run *)",
+      "Bash(git stash *)",
+      "Bash(curl -s http://localhost:3000 -o /dev/null -w \"%{http_code}\")",
+      "mcp__Claude_in_Chrome__tabs_context_mcp",
+      "Bash(curl -s http://localhost:3000/en)",
+      "Bash(curl -s http://localhost:3000/en -o /dev/null -w \"Homepage: %{http_code}\\\\n\")",
+      "Bash(curl -s http://localhost:3000/en/tools -o /dev/null -w \"Tools: %{http_code}\\\\n\")",
+      "Bash(curl -s http://localhost:3000/en/tools/compress -o /dev/null -w \"Compress: %{http_code}\\\\n\")",
+      "Bash(curl -s http://localhost:3000/en/tools/merge -o /dev/null -w \"Merge: %{http_code}\\\\n\")",
+      "Bash(curl -s http://localhost:3000/en/workflow -o /dev/null -w \"Workflow: %{http_code}\\\\n\")",
+      "Bash(curl -sL http://localhost:3000/en -o /dev/null -w \"Homepage: %{http_code}\\\\n\")",
+      "Bash(curl -sL http://localhost:3000/en/tools -o /dev/null -w \"Tools: %{http_code}\\\\n\")",
+      "Bash(curl -sL http://localhost:3000/en/tools/compress-pdf -o /dev/null -w \"Compress: %{http_code}\\\\n\")",
+      "Bash(curl -sL http://localhost:3000/en/tools/merge-pdf -o /dev/null -w \"Merge: %{http_code}\\\\n\")",
+      "Bash(curl -sL http://localhost:3000/en/workflow -o /dev/null -w \"Workflow: %{http_code}\\\\n\")",
+      "Bash(curl -sL http://localhost:3000/en/about -o /dev/null -w \"About: %{http_code}\\\\n\")",
+      "Bash(curl -sL http://localhost:3000/en/faq -o /dev/null -w \"FAQ: %{http_code}\\\\n\")",
+      "Bash(curl -sL http://localhost:3000/en/privacy -o /dev/null -w \"Privacy: %{http_code}\\\\n\")",
+      "Bash(curl -sL http://localhost:3000/en)",
+      "Bash(curl -sL http://localhost:3000/en/tools)",
+      "Bash(curl -sL http://localhost:3000/en/tools/compress-pdf)",
+      "Bash(pkill -f \"next dev\")",
+      "Bash(npx tsx -e ' *)",
+      "Bash(npx vitest *)"
+    ]
+  }
+}

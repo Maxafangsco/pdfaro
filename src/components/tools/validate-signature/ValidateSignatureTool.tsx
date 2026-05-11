@@ -114,7 +114,7 @@ export function ValidateSignatureTool({ className = '' }: { className?: string }
       />
 
       {error && (
-        <div className="p-4 rounded-[var(--radius-md)] bg-red-50 border border-red-200 text-red-700 dark:bg-red-950 dark:border-red-800 dark:text-red-300" role="alert">
+        <div className="p-4 rounded-[var(--radius-md)] bg-red-50 border border-red-200 text-red-700 dark:bg-red-950 dark:border-red-800 dark:text-red-300" role="alert" data-testid="error-alert">
           <p className="text-sm">{error}</p>
         </div>
       )}

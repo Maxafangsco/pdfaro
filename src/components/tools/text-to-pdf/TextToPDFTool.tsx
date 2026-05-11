@@ -227,7 +227,7 @@ export function TextToPDFTool({ className = '' }: TextToPDFToolProps) {
         </Card>
       )}
 
-      {error && <div className="p-4 rounded-[var(--radius-md)] bg-red-50 border border-red-200 text-red-700" role="alert"><p className="text-sm">{error}</p></div>}
+      {error && <div className="p-4 rounded-[var(--radius-md)] bg-red-50 border border-red-200 text-red-700" role="alert" data-testid="error-alert"><p className="text-sm">{error}</p></div>}
 
       {/* Options Panel */}
       {(files.length >= 1 || (inputMode === 'text' && directText.length > 0)) && (

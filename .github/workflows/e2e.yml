@@ -1,0 +1,79 @@
+name: E2E Tests (Playwright)
+
+on:
+  push:
+    branches: [main, feat/playwright-e2e]
+  pull_request:
+    branches: [main]
+
+# Cancel in-progress runs on the same ref to save CI minutes
+concurrency:
+  group: e2e-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  e2e:
+    name: Playwright E2E
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    env:
+      # Turbopack needs this off in CI to avoid memory issues
+      NEXT_TELEMETRY_DISABLED: 1
+      # Skip LibreOffice WASM decompression on first run in CI
+      CI: true
+
+    steps:
+      # ── Checkout ────────────────────────────────────────────────────────────
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # ── Node setup ──────────────────────────────────────────────────────────
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      # ── Install dependencies ─────────────────────────────────────────────
+      - name: Install npm dependencies
+        run: npm ci
+
+      # ── Install Playwright browsers ──────────────────────────────────────
+      # Only install Chromium — Firefox/WebKit are opt-in locally only.
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+
+      # ── Build Next.js (needed for a stable server in CI) ────────────────
+      # We run tests against `next start` (the production build) rather than
+      # `next dev` in CI.  This is faster and more representative.
+      - name: Build Next.js
+        run: npm run build
+        env:
+          # Suppress postbuild WASM scripts if they fail in CI environment
+          SKIP_WASM_POSTBUILD: true
+
+      # ── Run E2E tests ─────────────────────────────────────────────────────
+      - name: Run Playwright tests
+        run: npx playwright test --project=chromium
+        env:
+          # Override webServer command to use `next start` instead of `next dev`
+          PLAYWRIGHT_WEB_SERVER_CMD: npm run start
+
+      # ── Upload report on failure ──────────────────────────────────────────
+      - name: Upload Playwright HTML report
+        uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-report-${{ github.run_id }}
+          path: playwright-report/
+          retention-days: 14
+
+      # ── Upload test results on failure ────────────────────────────────────
+      - name: Upload test results
+        uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: test-results-${{ github.run_id }}
+          path: test-results/
+          retention-days: 7
