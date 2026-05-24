@@ -442,6 +442,7 @@ export function SplitPDFTool({ className = '' }: SplitPDFToolProps) {
         <div
           className="p-4 rounded-[var(--radius-md)] bg-red-50 border border-red-200 text-red-700"
           role="alert"
+          data-testid="error-alert"
         >
           <p className="text-sm">{error}</p>
         </div>
@@ -988,6 +989,7 @@ export function SplitPDFTool({ className = '' }: SplitPDFToolProps) {
             variant="primary"
             size="lg"
             onClick={handleSplit}
+            data-testid="split-button"
             disabled={!canSplit}
             loading={isProcessing}
           >

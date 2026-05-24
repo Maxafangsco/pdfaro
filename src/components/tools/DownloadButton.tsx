@@ -160,6 +160,7 @@ export const DownloadButton: React.FC<DownloadButtonProps> = ({
       onClick={handleDownload}
       className={className}
       aria-label={`${buttonText}${fileSizeText}`}
+      data-testid="download-button"
       {...buttonProps}
     >
       {/* Download icon */}

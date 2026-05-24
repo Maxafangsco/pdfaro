@@ -294,6 +294,7 @@ export const FileUploader: React.FC<FileUploaderProps> = ({
       tabIndex={disabled ? -1 : 0}
       aria-label={label || t('buttons.upload')}
       aria-disabled={disabled}
+      data-testid="file-uploader"
       className={`${baseStyles} ${stateStyles} ${className}`.trim()}
       onClick={handleClick}
       onKeyDown={handleKeyDown}
@@ -311,6 +312,7 @@ export const FileUploader: React.FC<FileUploaderProps> = ({
         onChange={handleInputChange}
         className="hidden"
         aria-hidden="true"
+        data-testid="file-input"
         disabled={disabled}
       />
 

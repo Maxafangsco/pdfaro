@@ -310,6 +310,7 @@ export function ImageToPDFTool({ className = '', imageType }: ImageToPDFToolProp
         <div
           className="p-4 rounded-[var(--radius-md)] bg-red-50 border border-red-200 text-red-700"
           role="alert"
+          data-testid="error-alert"
         >
           <p className="text-sm">{error}</p>
         </div>
@@ -570,6 +571,7 @@ export function ImageToPDFTool({ className = '', imageType }: ImageToPDFToolProp
           variant="primary"
           size="lg"
           onClick={handleConvert}
+          data-testid="convert-button"
           disabled={!canConvert}
           loading={isProcessing}
         >

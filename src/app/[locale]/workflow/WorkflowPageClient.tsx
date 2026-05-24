@@ -102,7 +102,9 @@ export default function WorkflowPageClient({ locale }: WorkflowPageClientProps) 
 
             {/* Workflow Editor - fills remaining height */}
             <main id="main-content" className="flex-1 overflow-hidden" tabIndex={-1}>
-                <WorkflowEditor />
+                <div data-testid="workflow-canvas" className="h-full">
+                    <WorkflowEditor />
+                </div>
             </main>
         </div>
     );

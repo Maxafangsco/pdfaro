@@ -90,7 +90,7 @@ export function RepairPDFTool({ className = '' }: RepairPDFToolProps) {
             )}
 
             {error && (
-                <div className="p-4 rounded-[var(--radius-md)] bg-red-50 border border-red-200 text-red-700" role="alert">
+                <div className="p-4 rounded-[var(--radius-md)] bg-red-50 border border-red-200 text-red-700" role="alert" data-testid="error-alert">
                     <p className="text-sm">{error}</p>
                 </div>
             )}

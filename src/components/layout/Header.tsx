@@ -341,6 +341,7 @@ export const Header: React.FC<HeaderProps> = ({ locale, showSearch = true }) => 
               aria-label={isMobileMenuOpen ? 'Close menu' : 'Open menu'}
               aria-expanded={isMobileMenuOpen}
               aria-controls="mobile-menu"
+              data-testid="mobile-menu-button"
             >
               {isMobileMenuOpen ? <X className="h-5 w-5" aria-hidden="true" /> : <Menu className="h-5 w-5" aria-hidden="true" />}
             </Button>
@@ -354,6 +355,7 @@ export const Header: React.FC<HeaderProps> = ({ locale, showSearch = true }) => 
             className="md:hidden py-3 border-t border-[hsl(var(--color-border))]"
             role="navigation"
             aria-label="Mobile navigation"
+            data-testid="mobile-menu"
           >
             <ul className="flex flex-col gap-1">
               {navItems.map((item) => (
