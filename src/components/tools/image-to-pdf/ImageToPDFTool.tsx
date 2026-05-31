@@ -63,39 +63,19 @@ export function ImageToPDFTool({ className = '', imageType }: ImageToPDFToolProp
   const cancelledRef = useRef(false);
 
   /**
-   * Get accepted file types based on imageType prop
+   * Accepted file types for Image→PDF uploads.
+   *
+   * Even on routes like `jpg-to-pdf` or `png-to-pdf`, users often upload other
+   * image formats. The processor supports them and the UI copy advertises them,
+   * so keep the accept list broad to avoid false “Invalid file type” errors.
    */
   const getAcceptedTypes = useCallback(() => {
-    if (imageType) {
-      switch (imageType.toLowerCase()) {
-        case 'jpg':
-        case 'jpeg':
-          return ['image/jpeg', '.jpg', '.jpeg'];
-        case 'png':
-          return ['image/png', '.png'];
-        case 'webp':
-          return ['image/webp', '.webp'];
-        case 'bmp':
-          return ['image/bmp', '.bmp'];
-        case 'tiff':
-        case 'tif':
-          return ['image/tiff', '.tiff', '.tif'];
-        case 'svg':
-          return ['image/svg+xml', '.svg'];
-        case 'heic':
-        case 'heif':
-          return ['image/heic', 'image/heif', '.heic', '.heif'];
-        default:
-          break;
-      }
-    }
-    // All supported formats
     return [
       'image/jpeg', 'image/png', 'image/webp', 'image/bmp',
       'image/tiff', 'image/svg+xml', 'image/heic', 'image/heif',
       '.jpg', '.jpeg', '.png', '.webp', '.bmp', '.tiff', '.tif', '.svg', '.heic', '.heif'
     ];
-  }, [imageType]);
+  }, []);
 
 
   /**

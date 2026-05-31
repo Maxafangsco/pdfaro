@@ -61,6 +61,23 @@ export const FileUploader: React.FC<FileUploaderProps> = ({
   // Generate accept string for input element
   const acceptString = accept.join(',');
 
+  // Derive a reasonable default label for the "Select" button.
+  // Many tools reuse FileUploader for non-PDF inputs (images, docs, etc.), so
+  // avoid misleading copy like "Select PDF" when images are expected.
+  const selectButtonText = (() => {
+    const imageExts = new Set([
+      '.jpg', '.jpeg', '.png', '.webp', '.bmp', '.tif', '.tiff', '.svg', '.heic', '.heif'
+    ]);
+    const lower = (accept || []).map((t) => t.toLowerCase());
+
+    const acceptsOnlyPdf = lower.length > 0 && lower.every((t) => t === 'application/pdf' || t === '.pdf');
+    const acceptsOnlyImages = lower.length > 0 && lower.every((t) => t.startsWith('image/') || imageExts.has(t));
+
+    if (acceptsOnlyImages) return multiple ? 'Select Images' : 'Select Image';
+    if (acceptsOnlyPdf) return 'Select PDF';
+    return multiple ? 'Select Files' : 'Select File';
+  })();
+
   /**
    * Validate files against constraints
    */
@@ -364,7 +381,7 @@ export const FileUploader: React.FC<FileUploaderProps> = ({
         tabIndex={-1}
         aria-hidden="true"
       >
-        Select PDF
+        {selectButtonText}
       </button>
 
       {/* Drag overlay */}
