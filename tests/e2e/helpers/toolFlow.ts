@@ -26,6 +26,7 @@ export const FIXTURES = path.resolve(__dirname, '../fixtures');
 export const PDF_1   = path.join(FIXTURES, 'sample.pdf');
 export const PDF_2   = path.join(FIXTURES, 'sample-two-pages.pdf');
 export const IMAGE_1 = path.join(FIXTURES, 'sample-image.jpg');
+export const IMAGE_PNG = path.join(FIXTURES, 'sample-image.png');
 export const TXT_1   = path.join(FIXTURES, 'sample-text.txt');
 
 // ---------------------------------------------------------------------------

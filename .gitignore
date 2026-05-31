@@ -15,6 +15,7 @@ coverage
 
 # Playwright
 playwright-report/
+test-results/
 
 # Misc
 .DS_Store

@@ -21,6 +21,7 @@ import {
   PDF_1,
   PDF_2,
   IMAGE_1,
+  IMAGE_PNG,
 } from './helpers/toolFlow.js';
 
 // ---------------------------------------------------------------------------
@@ -128,6 +129,23 @@ test.describe('Image to PDF', () => {
     await uploadFiles(page, [IMAGE_1]);
 
     await expect(page.getByTestId('convert-button')).toBeEnabled({ timeout: 8_000 });
+    const download = await processAndDownload(page, 'convert-button');
+    expect(download.suggestedFilename()).toMatch(/\.pdf$/i);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// JPG to PDF — should accept PNG too (regression)
+// ---------------------------------------------------------------------------
+
+test.describe('JPG to PDF', () => {
+  test('accepts a PNG upload and converts to PDF', async ({ page }) => {
+    await gotoTool(page, 'jpg-to-pdf');
+    await uploadFiles(page, [IMAGE_PNG]);
+
+    // If the file type is rejected, the error alert appears and button stays disabled.
+    await expect(page.getByTestId('convert-button')).toBeEnabled({ timeout: 8_000 });
+
     const download = await processAndDownload(page, 'convert-button');
     expect(download.suggestedFilename()).toMatch(/\.pdf$/i);
   });
