@@ -287,6 +287,7 @@ export function FlattenPDFTool({ className = '' }: FlattenPDFToolProps) {
           variant="primary"
           size="lg"
           onClick={handleFlatten}
+          data-testid="flatten-button"
           disabled={!canFlatten}
           loading={isProcessing}
         >

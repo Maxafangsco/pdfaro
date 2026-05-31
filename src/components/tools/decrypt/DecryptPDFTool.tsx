@@ -274,6 +274,7 @@ export function DecryptPDFTool({ className = '' }: DecryptPDFToolProps) {
           variant="primary"
           size="lg"
           onClick={handleDecrypt}
+          data-testid="decrypt-button"
           disabled={!canDecrypt}
           loading={isProcessing}
         >

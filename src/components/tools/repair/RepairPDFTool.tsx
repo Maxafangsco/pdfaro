@@ -126,6 +126,7 @@ export function RepairPDFTool({ className = '' }: RepairPDFToolProps) {
                             variant="primary"
                             size="lg"
                             onClick={handleProcess}
+          data-testid="repair-button"
                             disabled={files.length === 0 || isProcessing}
                             loading={isProcessing}
                         >

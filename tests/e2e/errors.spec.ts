@@ -75,22 +75,19 @@ test.describe('Image to PDF: wrong file type', () => {
 // ---------------------------------------------------------------------------
 
 test.describe('Action button without file upload', () => {
-  // These tools show the action button or need a file first
-  // They shouldn't crash or navigate to an error page
-
-  test('merge-pdf: does not crash without files', async ({ page }) => {
+  test('merge-pdf: merge button is disabled until files are provided', async ({ page }) => {
     await gotoTool(page, 'merge-pdf');
-    // The merge button should not be visible until files are uploaded
     const mergeBtn = page.getByTestId('merge-button');
-    const btnVisible = await mergeBtn.isVisible({ timeout: 2_000 }).catch(() => false);
+
+    // The button may be hidden (uploader replaces it) or visible but disabled —
+    // either is correct behaviour.  What must NOT happen is an enabled clickable button.
+    const btnVisible = await mergeBtn.isVisible({ timeout: 3_000 }).catch(() => false);
     if (btnVisible) {
-      await mergeBtn.click();
-      // Should show error, not crash
-      await expect(page).not.toHaveURL(/500|error/);
-    } else {
-      // Button hidden until upload — correct behaviour
-      expect(btnVisible).toBe(false);
+      // If visible, it must be disabled
+      await expect(mergeBtn).toBeDisabled();
     }
+    // If not visible the uploader is shown instead — also correct
+    await expect(page).not.toHaveURL(/500|error/);
   });
 });
 

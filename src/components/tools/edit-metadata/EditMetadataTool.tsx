@@ -458,6 +458,7 @@ export function EditMetadataTool({ className = '' }: EditMetadataToolProps) {
               variant="primary"
               size="lg"
               onClick={handleSaveMetadata}
+          data-testid="save-metadata-button"
               disabled={!file}
               className="w-full sm:w-auto"
             >

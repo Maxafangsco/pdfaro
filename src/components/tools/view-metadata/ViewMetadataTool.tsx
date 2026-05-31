@@ -433,6 +433,7 @@ export function ViewMetadataTool({ className = '' }: ViewMetadataToolProps) {
               variant="secondary"
               size="lg"
               onClick={handleExportJson}
+          data-testid="export-metadata-button"
             >
               {tTools('viewMetadata.exportJson') || 'Export as JSON'}
             </Button>

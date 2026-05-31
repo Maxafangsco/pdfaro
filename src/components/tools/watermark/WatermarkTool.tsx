@@ -531,6 +531,7 @@ export function WatermarkTool({ className = '' }: WatermarkToolProps) {
             size="lg"
             onClick={handleProcess}
             disabled={!file || isProcessing || (watermarkType === 'text' && !watermarkText.trim()) || (watermarkType === 'image' && !imageFile)}
+            data-testid="watermark-button"
             loading={isProcessing}
           >
             {isProcessing ? t('status.processing') : tTools('addButton')}

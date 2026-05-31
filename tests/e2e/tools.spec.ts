@@ -2,29 +2,44 @@
  * Tool-flow E2E tests — Phase 6
  *
  * Each test exercises the full user flow for a priority PDF tool:
- *   upload → configure → process → download
+ *   upload → configure → click action button → wait for DownloadButton → download
+ *
+ * PDFaro tools use a two-step download pattern:
+ *   1. Click the action button (merge-button, compress-button, etc.)
+ *   2. Tool processes, then renders a DownloadButton
+ *   3. User clicks DownloadButton → browser download event fires
  *
  * Tests are ordered by priority (P0 first).
- *
- * WASM-heavy tools (word-to-pdf, ocr) have extended timeouts and are
- * marked with test.slow() to triple the global timeout.
  */
 
-import { test, expect } from '@playwright/test';
+import { test, expect, type Download, type Page } from '@playwright/test';
 import {
   gotoTool,
   uploadFiles,
   uploadPDF,
   waitForProcessing,
-  clickAndDownload,
-  runSingleFileTool,
-  expectError,
-  expectDownloadButton,
   PDF_1,
   PDF_2,
   IMAGE_1,
-  TXT_1,
 } from './helpers/toolFlow.js';
+
+// ---------------------------------------------------------------------------
+// Core helper: click action button → wait for DownloadButton → click → download
+// ---------------------------------------------------------------------------
+
+async function processAndDownload(
+  page: Page,
+  actionTestId: string,
+  processingTimeout = 45_000,
+): Promise<Download> {
+  await page.getByTestId(actionTestId).click();
+  await expect(page.getByTestId('download-button')).toBeVisible({ timeout: processingTimeout });
+  const [download] = await Promise.all([
+    page.waitForEvent('download', { timeout: processingTimeout }),
+    page.getByTestId('download-button').first().click(),
+  ]);
+  return download;
+}
 
 // ---------------------------------------------------------------------------
 // Merge PDF  (P0)
@@ -33,37 +48,22 @@ import {
 test.describe('Merge PDF', () => {
   test('merges two PDFs and downloads result', async ({ page }) => {
     await gotoTool(page, 'merge-pdf');
-
-    // Upload two files
     await uploadFiles(page, [PDF_1, PDF_2]);
 
-    // Both files should appear in the file list
-    const fileInput = page.getByTestId('file-input');
-    // After upload the merge button should be enabled
-    const mergeBtn = page.getByTestId('merge-button');
-    await expect(mergeBtn).toBeVisible({ timeout: 8_000 });
+    // Merge button becomes enabled once ≥2 files are added
+    await expect(page.getByTestId('merge-button')).toBeEnabled({ timeout: 8_000 });
 
-    const download = await clickAndDownload(page, 'merge-button');
-    await waitForProcessing(page);
-
+    const download = await processAndDownload(page, 'merge-button');
     expect(download.suggestedFilename()).toMatch(/\.pdf$/i);
   });
 
-  test('shows error when only one file is provided', async ({ page }) => {
+  test('merge button is disabled with only one file', async ({ page }) => {
     await gotoTool(page, 'merge-pdf');
     await uploadFiles(page, [PDF_1]);
 
-    // Merge button may be disabled or show an error inline
-    // Click it and assert either disabled state or error
     const mergeBtn = page.getByTestId('merge-button');
-    const isDisabled = await mergeBtn.isDisabled().catch(() => false);
-    if (!isDisabled) {
-      await mergeBtn.click();
-      // Either an error appears or nothing happens (button stays enabled but
-      // tool validates before processing)
-      // We just assert no crash
-    }
-    await expect(page).not.toHaveURL(/500|error/);
+    await expect(mergeBtn).toBeVisible({ timeout: 8_000 });
+    await expect(mergeBtn).toBeDisabled();
   });
 });
 
@@ -76,12 +76,8 @@ test.describe('Compress PDF', () => {
     await gotoTool(page, 'compress-pdf');
     await uploadPDF(page, PDF_1);
 
-    const compressBtn = page.getByTestId('compress-button');
-    await expect(compressBtn).toBeVisible({ timeout: 8_000 });
-
-    const download = await clickAndDownload(page, 'compress-button');
-    await waitForProcessing(page, 45_000);
-
+    await expect(page.getByTestId('compress-button')).toBeEnabled({ timeout: 8_000 });
+    const download = await processAndDownload(page, 'compress-button');
     expect(download.suggestedFilename()).toMatch(/\.(pdf|zip)$/i);
   });
 });
@@ -95,12 +91,8 @@ test.describe('Split PDF', () => {
     await gotoTool(page, 'split-pdf');
     await uploadPDF(page, PDF_2);
 
-    const splitBtn = page.getByTestId('split-button');
-    await expect(splitBtn).toBeVisible({ timeout: 8_000 });
-
-    const download = await clickAndDownload(page, 'split-button');
-    await waitForProcessing(page, 30_000);
-
+    await expect(page.getByTestId('split-button')).toBeEnabled({ timeout: 8_000 });
+    const download = await processAndDownload(page, 'split-button');
     expect(download.suggestedFilename()).toMatch(/\.(pdf|zip)$/i);
   });
 });
@@ -114,12 +106,14 @@ test.describe('Rotate PDF', () => {
     await gotoTool(page, 'rotate-pdf');
     await uploadPDF(page, PDF_1);
 
-    const rotateBtn = page.getByTestId('rotate-button');
-    await expect(rotateBtn).toBeVisible({ timeout: 8_000 });
+    // rotate-button is disabled until pages are marked for rotation (canRotate = false).
+    // Click "Rotate All Right" first to mark all pages, then apply.
+    const rotateAllRight = page.getByRole('button', { name: /rotate all right/i });
+    await expect(rotateAllRight).toBeVisible({ timeout: 10_000 });
+    await rotateAllRight.click();
 
-    const download = await clickAndDownload(page, 'rotate-button');
-    await waitForProcessing(page, 30_000);
-
+    await expect(page.getByTestId('rotate-button')).toBeEnabled({ timeout: 8_000 });
+    const download = await processAndDownload(page, 'rotate-button');
     expect(download.suggestedFilename()).toMatch(/\.pdf$/i);
   });
 });
@@ -133,106 +127,79 @@ test.describe('Image to PDF', () => {
     await gotoTool(page, 'image-to-pdf');
     await uploadFiles(page, [IMAGE_1]);
 
-    const convertBtn = page.getByTestId('convert-button');
-    await expect(convertBtn).toBeVisible({ timeout: 8_000 });
-
-    const download = await clickAndDownload(page, 'convert-button');
-    await waitForProcessing(page, 30_000);
-
+    await expect(page.getByTestId('convert-button')).toBeEnabled({ timeout: 8_000 });
+    const download = await processAndDownload(page, 'convert-button');
     expect(download.suggestedFilename()).toMatch(/\.pdf$/i);
   });
 });
 
 // ---------------------------------------------------------------------------
-// Protect PDF  (P1)
+// Encrypt PDF  (P1) — slug: 'encrypt-pdf', action button: data-testid="encrypt-button"
 // ---------------------------------------------------------------------------
 
-test.describe('Protect PDF', () => {
+test.describe('Encrypt PDF', () => {
   test('encrypts a PDF with a password and downloads result', async ({ page }) => {
-    await gotoTool(page, 'protect-pdf');
+    await gotoTool(page, 'encrypt-pdf');
     await uploadPDF(page, PDF_1);
 
-    // Fill password fields — look for password inputs
+    // Fill password fields (two inputs: password + confirm)
     const passwordInputs = page.locator('input[type="password"]');
+    await expect(passwordInputs.first()).toBeVisible({ timeout: 8_000 });
     const count = await passwordInputs.count();
-    if (count > 0) {
-      await passwordInputs.nth(0).fill('TestPass123!');
-      if (count > 1) {
-        await passwordInputs.nth(1).fill('TestPass123!');
-      }
-    }
+    await passwordInputs.nth(0).fill('TestPass123!');
+    if (count > 1) await passwordInputs.nth(1).fill('TestPass123!');
 
-    // Find the protect/encrypt button (may not have our testid)
-    const actionBtn =
-      page.getByTestId('process-button').or(
-        page.getByRole('button', { name: /protect|encrypt|apply/i })
-      ).first();
-
-    await expect(actionBtn).toBeVisible({ timeout: 8_000 });
-    const download = await Promise.all([
-      page.waitForEvent('download'),
-      actionBtn.click(),
-    ]).then(([dl]) => dl);
-
-    await waitForProcessing(page, 30_000);
+    await expect(page.getByTestId('encrypt-button')).toBeEnabled({ timeout: 8_000 });
+    const download = await processAndDownload(page, 'encrypt-button');
     expect(download.suggestedFilename()).toMatch(/\.pdf$/i);
   });
 });
 
 // ---------------------------------------------------------------------------
-// Watermark PDF  (P1)
+// Add Watermark  (P1) — slug: 'add-watermark', action button: data-testid="watermark-button"
 // ---------------------------------------------------------------------------
 
-test.describe('Watermark PDF', () => {
+test.describe('Add Watermark', () => {
   test('adds a text watermark and downloads result', async ({ page }) => {
-    await gotoTool(page, 'watermark-pdf');
+    await gotoTool(page, 'add-watermark');
     await uploadPDF(page, PDF_1);
 
-    // Fill in watermark text if there's an input
+    // Fill the watermark text field — button stays disabled until text is provided
     const textInput = page.locator('input[type="text"], textarea').first();
-    const inputVisible = await textInput.isVisible().catch(() => false);
-    if (inputVisible) {
-      await textInput.fill('CONFIDENTIAL');
-    }
+    await expect(textInput).toBeVisible({ timeout: 8_000 });
+    await textInput.fill('CONFIDENTIAL');
 
-    // Find the watermark/apply button
-    const actionBtn =
-      page.getByTestId('process-button').or(
-        page.getByRole('button', { name: /watermark|apply|add/i })
-      ).first();
-
-    await expect(actionBtn).toBeVisible({ timeout: 8_000 });
-    const download = await Promise.all([
-      page.waitForEvent('download'),
-      actionBtn.click(),
-    ]).then(([dl]) => dl);
-
-    await waitForProcessing(page, 30_000);
+    await expect(page.getByTestId('watermark-button')).toBeEnabled({ timeout: 8_000 });
+    const download = await processAndDownload(page, 'watermark-button');
     expect(download.suggestedFilename()).toMatch(/\.pdf$/i);
   });
 });
 
 // ---------------------------------------------------------------------------
-// PDF to Image  (P1)
+// PDF to JPG  (P1) — slug: 'pdf-to-jpg', action button: data-testid="pdf-to-image-button"
 // ---------------------------------------------------------------------------
 
-test.describe('PDF to Image', () => {
-  test('converts PDF to image and triggers download', async ({ page }) => {
-    await gotoTool(page, 'pdf-to-image');
+test.describe('PDF to JPG', () => {
+  test('converts a PDF to JPG and triggers download', async ({ page }) => {
+    await gotoTool(page, 'pdf-to-jpg');
     await uploadPDF(page, PDF_1);
 
-    const actionBtn =
-      page.getByTestId('process-button').or(
-        page.getByRole('button', { name: /convert|export|extract/i })
-      ).first();
+    await expect(page.getByTestId('pdf-to-image-button')).toBeEnabled({ timeout: 8_000 });
 
-    await expect(actionBtn).toBeVisible({ timeout: 8_000 });
-    const download = await Promise.all([
-      page.waitForEvent('download'),
-      actionBtn.click(),
-    ]).then(([dl]) => dl);
+    // For a single-page PDF the tool renders a DownloadButton.
+    // For multi-page it renders a "Download All" zip button instead.
+    await page.getByTestId('pdf-to-image-button').click();
 
-    await waitForProcessing(page, 45_000);
+    // Wait for either a DownloadButton (single image) or a zip button (multiple)
+    const downloadBtn = page.getByTestId('download-button').first();
+    const zipBtn = page.getByRole('button', { name: /download all/i });
+    await expect(downloadBtn.or(zipBtn)).toBeVisible({ timeout: 45_000 });
+
+    // Click whichever appeared and capture the download event
+    const [download] = await Promise.all([
+      page.waitForEvent('download', { timeout: 30_000 }),
+      (await downloadBtn.isVisible() ? downloadBtn : zipBtn).click(),
+    ]);
     expect(download.suggestedFilename()).toMatch(/\.(jpg|jpeg|png|zip)$/i);
   });
 });
@@ -244,14 +211,12 @@ test.describe('PDF to Image', () => {
 test.describe('Sign PDF (iframe smoke)', () => {
   test('loads sign-pdf page with file uploader', async ({ page }) => {
     await gotoTool(page, 'sign-pdf');
-    // Before upload: FileUploader should be visible
     await expect(page.getByTestId('file-uploader')).toBeVisible({ timeout: 10_000 });
   });
 
   test('accepts PDF upload for signing', async ({ page }) => {
     await gotoTool(page, 'sign-pdf');
     await uploadPDF(page, PDF_1);
-    // After upload a PDF.js iframe should appear
     const iframe = page.locator('iframe[title*="PDF"], iframe[src*="pdfjs"]');
     await expect(iframe).toBeVisible({ timeout: 15_000 });
   });
@@ -287,12 +252,11 @@ test.describe('OCR PDF', () => {
     await uploadPDF(page, PDF_1);
 
     const ocrBtn = page.getByTestId('ocr-button');
-    await expect(ocrBtn).toBeVisible({ timeout: 8_000 });
+    await expect(ocrBtn).toBeEnabled({ timeout: 8_000 });
     await ocrBtn.click();
 
     await waitForProcessing(page, 90_000);
 
-    // Either a download button appears or text output is shown
     const downloadBtn = page.getByTestId('download-button');
     const textOutput = page.locator('[data-testid="ocr-output"], textarea, .ocr-result');
     await expect(downloadBtn.or(textOutput).first()).toBeVisible({ timeout: 90_000 });

@@ -271,6 +271,7 @@ export function ReversePagesTool({ className = '' }: ReversePagesToolProps) {
             variant="primary"
             size="lg"
             onClick={handleReverse}
+          data-testid="reverse-button"
             disabled={!canProcess}
             loading={isProcessing}
           >
