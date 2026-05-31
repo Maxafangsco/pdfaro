@@ -459,6 +459,7 @@ export function DeletePagesTool({ className = '' }: DeletePagesToolProps) {
             variant="primary"
             size="lg"
             onClick={handleDelete}
+          data-testid="delete-button"
             disabled={!canDelete}
             loading={isProcessing}
             className="bg-red-600 hover:bg-red-700"

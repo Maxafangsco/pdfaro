@@ -431,6 +431,7 @@ export function ExtractPagesTool({ className = '' }: ExtractPagesToolProps) {
             variant="primary"
             size="lg"
             onClick={handleExtract}
+          data-testid="extract-button"
             disabled={!canExtract}
             loading={isProcessing}
           >

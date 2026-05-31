@@ -568,6 +568,7 @@ export function PDFToImageTool({ className = '', outputFormat }: PDFToImageToolP
           size="lg"
           onClick={handleConvert}
           disabled={!canConvert}
+          data-testid="pdf-to-image-button"
           loading={isProcessing}
         >
           {isProcessing

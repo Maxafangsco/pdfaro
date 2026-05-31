@@ -322,6 +322,7 @@ export function AddBlankPageTool({ className = '' }: AddBlankPageToolProps) {
             variant="primary"
             size="lg"
             onClick={handleAddBlankPages}
+          data-testid="add-blank-page-button"
             disabled={!canProcess}
             loading={isProcessing}
           >

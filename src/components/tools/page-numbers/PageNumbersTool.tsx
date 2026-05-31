@@ -740,6 +740,7 @@ export function PageNumbersTool({ className = '' }: PageNumbersToolProps) {
             variant="primary"
             size="lg"
             onClick={handleProcess}
+          data-testid="page-numbers-button"
             disabled={!file || isProcessing}
             loading={isProcessing}
           >

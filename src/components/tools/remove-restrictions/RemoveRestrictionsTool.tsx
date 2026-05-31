@@ -310,6 +310,7 @@ export function RemoveRestrictionsTool({ className = '' }: RemoveRestrictionsToo
           variant="primary"
           size="lg"
           onClick={handleRemoveRestrictions}
+          data-testid="remove-restrictions-button"
           disabled={!canProcess}
           loading={isProcessing}
         >

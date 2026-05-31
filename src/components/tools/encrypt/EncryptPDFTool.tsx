@@ -341,6 +341,7 @@ export function EncryptPDFTool({ className = '' }: EncryptPDFToolProps) {
           size="lg"
           onClick={handleEncrypt}
           disabled={!canEncrypt}
+          data-testid="encrypt-button"
           loading={isProcessing}
         >
           {isProcessing 
