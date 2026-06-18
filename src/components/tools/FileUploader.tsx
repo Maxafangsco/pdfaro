@@ -2,9 +2,10 @@
 
 import React, { useCallback, useRef, useState, useEffect } from 'react';
 import { useTranslations } from 'next-intl';
-import { UploadCloud, File, Plus, X } from 'lucide-react';
+import { UploadCloud, File, Plus, X, Lock, Loader2 } from 'lucide-react';
 import { trackFileUploaded } from '@/lib/analytics';
 import { useToolContext } from '@/lib/contexts/ToolContext';
+import { isTauri } from '@/lib/tauri-bridge';
 
 export interface FileUploaderProps {
   /** Accepted file types (MIME types or extensions) */

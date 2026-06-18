@@ -508,21 +508,12 @@ export function OCRPDFTool({ className = '' }: OCRPDFToolProps) {
         />
       )}
 
-      {/* Action Buttons */}
-      <div className="flex flex-wrap items-center gap-4">
-        <Button
-          variant="primary"
-          size="lg"
-          onClick={handleOCR}
-          data-testid="ocr-button"
-          disabled={!canProcess}
-          loading={isProcessing}
-        >
-          {isProcessing 
-            ? (t('status.processing') || 'Processing...') 
-            : (tTools('ocrPdf.processButton') || 'Start OCR')
-          }
-        </Button>
+      {/* Complete Outcomes screen */}
+      {status === 'complete' && result && (
+        <Card variant="default" className="p-8 rounded-[2.5rem] bg-white/40 dark:bg-black/30 backdrop-blur-md border border-white/20 dark:border-zinc-800/40 text-center space-y-6 shadow-2xl">
+          <div className="w-16 h-16 rounded-full bg-emerald-500/10 text-emerald-500 flex items-center justify-center mx-auto">
+            <ShieldCheck className="w-10 h-10" />
+          </div>
 
           <div className="space-y-2 max-w-sm mx-auto">
             <h3 className="text-base font-extrabold text-[hsl(var(--color-foreground))]">{t('ocr.successTitle')}</h3>

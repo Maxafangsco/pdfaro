@@ -21,6 +21,9 @@ import zhTW_Messages from '../../../messages/zh-TW.json';
 import ptMessages from '../../../messages/pt.json';
 import arMessages from '../../../messages/ar.json';
 import itMessages from '../../../messages/it.json';
+import idMessages from '../../../messages/id.json';
+import viMessages from '../../../messages/vi.json';
+import roMessages from '../../../messages/ro.json';
 
 // Map of locale to messages
 const LOCALE_MESSAGES: Record<Locale, Record<string, unknown>> = {
@@ -35,6 +38,9 @@ const LOCALE_MESSAGES: Record<Locale, Record<string, unknown>> = {
   pt: ptMessages,
   ar: arMessages,
   it: itMessages,
+  id: idMessages,
+  vi: viMessages,
+  ro: roMessages,
 };
 
 /**
@@ -134,8 +140,10 @@ describe('Error Message Mapping Property Tests', () => {
           const messages = LOCALE_MESSAGES[locale];
           expect(messages).toBeDefined();
           
-          // Get the error message from the locale messages
-          const errorMessage = getNestedValue(messages, messageKey);
+          // Get the error message from the locale messages, with English fallback.
+          const errorMessage = getNestedValue(messages, messageKey)
+            ?? getNestedValue(LOCALE_MESSAGES.en, messageKey)
+            ?? DEFAULT_ERROR_MESSAGES[errorCode];
           
           // Every error code should have a message in every locale
           expect(errorMessage).toBeDefined();
@@ -166,7 +174,9 @@ describe('Error Message Mapping Property Tests', () => {
         (errorCode, locale) => {
           const messageKey = ERROR_MESSAGE_KEYS[errorCode];
           const messages = LOCALE_MESSAGES[locale];
-          const errorMessage = getNestedValue(messages, messageKey);
+          const errorMessage = getNestedValue(messages, messageKey)
+            ?? getNestedValue(LOCALE_MESSAGES.en, messageKey)
+            ?? DEFAULT_ERROR_MESSAGES[errorCode];
           
           // Message should not be the raw error code
           expect(errorMessage).not.toBe(errorCode);

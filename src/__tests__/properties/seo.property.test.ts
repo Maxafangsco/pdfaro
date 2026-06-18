@@ -223,7 +223,7 @@ describe('SEO Property Tests', () => {
             expect(schema.url).toContain(tool.slug);
             expect(schema.url).toContain(locale);
             expect(schema.applicationCategory).toBe('UtilitiesApplication');
-            expect(schema.operatingSystem).toBe('Windows, macOS, Linux, iOS, Android, Chrome OS');
+            expect(schema.operatingSystem).toBe('Web Browser');
             expect(schema.offers).toBeDefined();
             expect(schema.offers.price).toBe('0');
             

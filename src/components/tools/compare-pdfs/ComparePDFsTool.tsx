@@ -453,14 +453,23 @@ export function ComparePDFsTool({ className = '' }: ComparePDFsToolProps) {
                     <p className="text-xs text-[hsl(var(--color-muted-foreground))]">{file2.pageCount} {t('pdfToCbz.pagesLabel') || 'pages'} • {(file2.file.size / (1024 * 1024)).toFixed(2)} MB</p>
                   </div>
                 </div>
-                <Button variant="ghost" size="sm" onClick={handleClearFile2} disabled={isProcessing}>
-                  {t('buttons.remove') || 'Remove'}
-                </Button>
-              </div>
-            </Card>
-          )}
+                <Button variant="ghost" size="sm" onClick={() => setFile2(null)}>{t('comparePdfs.removeButton')}</Button>
+              </Card>
+            ) : (
+              <FileUploader
+                accept={['application/pdf']}
+                multiple={false}
+                onFilesSelected={handleFile2Selected}
+                onError={setError}
+                disabled={isProcessing}
+                label={t('comparePdfs.modifiedPdfLabel')}
+                description={t('comparePdfs.modifiedPdfDesc')}
+                className="min-h-[160px] p-6 rounded-2xl border-emerald-500/20 hover:border-emerald-500"
+              />
+            )}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Error Message */}
       {error && (

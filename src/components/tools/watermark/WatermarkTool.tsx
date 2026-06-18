@@ -809,33 +809,24 @@ export function WatermarkTool({ className = '' }: WatermarkToolProps) {
               )}
             </div>
 
-      {file && (
-        <div className="flex flex-wrap items-center gap-4">
-          <Button
-            variant="primary"
-            size="lg"
-            onClick={handleProcess}
-            disabled={!file || isProcessing || (watermarkType === 'text' && !watermarkText.trim()) || (watermarkType === 'image' && !imageFile)}
-            data-testid="watermark-button"
-            loading={isProcessing}
-          >
-            {isProcessing ? t('status.processing') : tTools('addButton')}
-          </Button>
-          {result && (
-            <DownloadButton
-              file={result}
-              filename={file.name.replace('.pdf', '_watermarked.pdf')}
-              variant="secondary"
-              size="lg"
-              showFileSize
-            />
-          )}
-        </div>
-      )}
-
-      {status === 'complete' && result && (
-        <div className="p-4 rounded-lg bg-green-50 border border-green-200 text-green-700 dark:bg-green-900/20 dark:border-green-800 dark:text-green-400">
-          <p className="text-sm font-medium">{tTools('successMessage')}</p>
+            <Card className="flex-1 min-h-[600px] overflow-hidden relative border-dashed border-2 flex items-center justify-center bg-[hsl(var(--color-muted)/0.3)]">
+              {previewUrl ? (
+                <iframe
+                  src={`${previewUrl}#toolbar=0&navpanes=0&scrollbar=0&view=FitH`}
+                  className="w-full h-full absolute inset-0 border-0"
+                  title="Watermark Preview"
+                />
+              ) : (
+                <div className="text-[hsl(var(--color-muted-foreground))] text-center p-8">
+                  <svg className="w-12 h-12 mx-auto mb-4 opacity-20" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                  </svg>
+                  <p>{tTools('previewTitle')}</p>
+                </div>
+              )}
+            </Card>
+          </div>
         </div>
       )}
     </div>
