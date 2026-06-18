@@ -7,9 +7,9 @@
  * 1. Uses WorkerBrowserConverter instead of BrowserConverter — runs WASM in a
  *    dedicated Web Worker, avoiding main-thread blocking and eliminating the need
  *    for fragile loadModule patches / Cloudflare Rocket Loader workarounds
- * 2. Uses uncompressed paths (soffice.wasm / soffice.data) — works natively with
- *    all servers (Next.js dev, Vercel, Netlify, etc.). For Nginx production,
- *    gzip_static automatically serves the .gz version when available.
+ * 2. Resolves asset variants at runtime (soffice.wasm / soffice.wasm.gz and
+ *    soffice.data / soffice.data.gz) so development and production deployments
+ *    both work regardless of whether uncompressed files are present.
  * 3. Specifies browserWorkerJs for the library's internal worker communication
  * 4. Checks SharedArrayBuffer support upfront — fails fast with a clear error
  * 
@@ -31,10 +31,10 @@ import { fetchAssembledBlob } from '../utils/asset-loader';
 
 const LIBREOFFICE_PATH = '/libreoffice-wasm/';
 const ASSET_VERSION = '20240212-3';
-// Request uncompressed names. In production, nginx gzip_static serves the .gz variant
-// with correct Content-Encoding and MIME headers (required for WebAssembly streaming).
 const SOFFICE_WASM_FILE = 'soffice.wasm';
 const SOFFICE_DATA_FILE = 'soffice.data';
+const SOFFICE_WASM_CANDIDATES = [SOFFICE_WASM_FILE, 'soffice.wasm.gz'] as const;
+const SOFFICE_DATA_CANDIDATES = [SOFFICE_DATA_FILE, 'soffice.data.gz'] as const;
 
 function normalizeBasePath(path: string): string {
     return path.endsWith('/') ? path : `${path}/`;
@@ -62,6 +62,9 @@ export class LibreOfficeConverter {
     private progressCallback?: ProgressCallback;
     /** Track Blob URLs for cleanup */
     private blobUrls: string[] = [];
+    /** Resolved asset filenames (supports plain and .gz variants) */
+    private sofficeWasmFile = SOFFICE_WASM_FILE;
+    private sofficeDataFile = SOFFICE_DATA_FILE;
 
     constructor(basePath?: string) {
         this.basePath = normalizeBasePath(basePath || LIBREOFFICE_PATH);
@@ -116,22 +119,25 @@ export class LibreOfficeConverter {
                 : '';
             this.progressCallback?.({ phase: 'loading', percent: 5, message: `Loading conversion engine${totalInfo}...` });
 
-            // Fetch and reassemble assets (handles chunking on Cloudflare Pages)
-            const [sofficeJsBlob, sofficeWasmBlob, sofficeDataBlob, sofficeWorkerJsBlob, browserWorkerJsBlob] = await Promise.all([
-                fetchAssembledBlob(`${this.basePath}soffice.js?v=${ASSET_VERSION}`),
-                fetchAssembledBlob(`${this.basePath}${SOFFICE_WASM_FILE}?v=${ASSET_VERSION}`),
-                fetchAssembledBlob(`${this.basePath}${SOFFICE_DATA_FILE}?v=${ASSET_VERSION}`),
-                fetchAssembledBlob(`${this.basePath}soffice.worker.js?v=${ASSET_VERSION}`),
-                fetchAssembledBlob(`${this.basePath}browser.worker.global.js?v=${ASSET_VERSION}`),
+            // Fetch and reassemble large binary assets (handles chunking on Cloudflare Pages).
+            // Keep JS worker scripts as normal same-origin URLs so nested pthread workers can boot.
+            const [rawSofficeWasmBlob, rawSofficeDataBlob] = await Promise.all([
+                fetchAssembledBlob(`${this.basePath}${this.sofficeWasmFile}?v=${ASSET_VERSION}`),
+                fetchAssembledBlob(`${this.basePath}${this.sofficeDataFile}?v=${ASSET_VERSION}`),
             ]);
 
-            const sofficeJsUrl = URL.createObjectURL(sofficeJsBlob);
+            const [sofficeWasmBlob, sofficeDataBlob] = await Promise.all([
+                this.normalizeMaybeGzipBlob(rawSofficeWasmBlob, this.sofficeWasmFile, 'application/wasm'),
+                this.normalizeMaybeGzipBlob(rawSofficeDataBlob, this.sofficeDataFile, 'application/octet-stream'),
+            ]);
+
             const sofficeWasmUrl = URL.createObjectURL(sofficeWasmBlob);
             const sofficeDataUrl = URL.createObjectURL(sofficeDataBlob);
-            const sofficeWorkerJsUrl = URL.createObjectURL(sofficeWorkerJsBlob);
-            const browserWorkerJsUrl = URL.createObjectURL(browserWorkerJsBlob);
+            this.blobUrls = [sofficeWasmUrl, sofficeDataUrl];
 
-            this.blobUrls = [sofficeJsUrl, sofficeWasmUrl, sofficeDataUrl, sofficeWorkerJsUrl, browserWorkerJsUrl];
+            const sofficeJsUrl = `${this.basePath}soffice.js?v=${ASSET_VERSION}`;
+            const sofficeWorkerJsUrl = `${this.basePath}soffice.worker.js?v=${ASSET_VERSION}`;
+            const browserWorkerJsUrl = `${this.basePath}browser.worker.global.js?v=${ASSET_VERSION}`;
 
             this.converter = new WorkerBrowserConverter({
                 sofficeJs: sofficeJsUrl,
@@ -160,7 +166,18 @@ export class LibreOfficeConverter {
 
             console.log('[LibreOffice] Starting initialization via WorkerBrowserConverter...');
             const initStart = performance.now();
-            await this.converter.initialize();
+            try {
+                await this.converter.initialize();
+            } catch (error) {
+                const message = error instanceof Error ? error.message : String(error);
+                if (message.toLowerCase().includes('wasm initialization timeout')) {
+                    throw new Error(
+                        'WASM initialization timeout. This is often caused by worker startup failures or cross-origin isolation issues. ' +
+                        'Verify COOP/COEP headers and check [LibreOffice] console logs for worker/network errors.'
+                    );
+                }
+                throw error;
+            }
             const initDuration = Math.round(performance.now() - initStart);
             console.log(`[LibreOffice] Initialization completed in ${initDuration}ms`);
 
@@ -176,6 +193,65 @@ export class LibreOfficeConverter {
             this.initialized = false;
             throw e;
         }
+    }
+
+    private async resolveAssetVariant(
+        logicalName: string,
+        candidates: readonly string[],
+    ): Promise<string> {
+        for (const candidate of candidates) {
+            const url = `${this.basePath}${candidate}?v=${ASSET_VERSION}`;
+            const manifestUrl = `${this.basePath}${candidate}.manifest.json?v=${ASSET_VERSION}`;
+
+            try {
+                const res = await fetch(url, { method: 'HEAD' });
+                if (res.ok) {
+                    if (candidate !== logicalName) {
+                        console.warn(`[LibreOffice] ${logicalName}: using fallback asset ${candidate}`);
+                    }
+                    return candidate;
+                }
+
+                const manifestRes = await fetch(manifestUrl, { method: 'HEAD' });
+                if (manifestRes.ok) {
+                    console.warn(`[LibreOffice] ${logicalName}: using chunked asset manifest for ${candidate}`);
+                    return candidate;
+                }
+            } catch {
+                // Keep trying other variants.
+            }
+        }
+
+        throw new Error(
+            `Cannot locate ${logicalName}. Tried: ${candidates.join(', ')}`
+        );
+    }
+
+    private async normalizeMaybeGzipBlob(
+        blob: Blob,
+        fileName: string,
+        targetMimeType: string,
+    ): Promise<Blob> {
+        if (!fileName.endsWith('.gz')) return blob;
+
+        const signature = new Uint8Array(await blob.slice(0, 2).arrayBuffer());
+        const isGzipStream = signature.length === 2 && signature[0] === 0x1f && signature[1] === 0x8b;
+
+        if (!isGzipStream) {
+            // Browser likely already decompressed based on Content-Encoding.
+            return blob;
+        }
+
+        if (typeof DecompressionStream === 'undefined') {
+            throw new Error(
+                `${fileName} is gzip-compressed but this browser cannot decompress gzip streams.`
+            );
+        }
+
+        console.warn(`[LibreOffice] ${fileName}: decompressing gzip payload in-browser`);
+        const stream = blob.stream().pipeThrough(new DecompressionStream('gzip'));
+        const decompressed = await new Response(stream).arrayBuffer();
+        return new Blob([decompressed], { type: targetMimeType });
     }
 
     /**
@@ -213,10 +289,13 @@ export class LibreOfficeConverter {
             );
         }
 
+        this.sofficeWasmFile = await this.resolveAssetVariant(SOFFICE_WASM_FILE, SOFFICE_WASM_CANDIDATES);
+        this.sofficeDataFile = await this.resolveAssetVariant(SOFFICE_DATA_FILE, SOFFICE_DATA_CANDIDATES);
+
         // 3. Check file connectivity (parallel for speed) & accumulate total size
         const files = [
-            SOFFICE_WASM_FILE,
-            SOFFICE_DATA_FILE,
+            this.sofficeWasmFile,
+            this.sofficeDataFile,
             'soffice.js',
             'soffice.worker.js',
             'browser.worker.global.js',
