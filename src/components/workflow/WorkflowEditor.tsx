@@ -24,8 +24,10 @@ import 'reactflow/dist/style.css';
 import { useTranslations } from 'next-intl';
 import { logger } from '@/lib/utils/logger';
 import { WorkflowNode, WorkflowEdge, ToolNodeData, WorkflowExecutionState, SavedWorkflow, WorkflowTemplate, WorkflowOutputFile } from '@/types/workflow';
-import { validateWorkflow, validateConnection, topologicalSort, findInputNodes } from '@/lib/workflow/engine';
+import { validateWorkflow, validateConnection, topologicalSort, findInputNodes, distributeFilesToInputNodes } from '@/lib/workflow/engine';
 import { executeNode, collectInputFiles } from '@/lib/workflow/executor';
+import { LIBREOFFICE_TOOL_IDS, preloadLibreOfficeConverter } from '@/lib/libreoffice/shared-converter';
+import { isCrossOriginIsolated } from '@/lib/utils/cross-origin-isolated';
 import { buildNodeOutputsFromResult, deriveWorkflowFailureContext } from '@/lib/workflow/execution-utils';
 import { saveWorkflow, getSavedWorkflows, deleteWorkflow, duplicateWorkflow, exportWorkflow, importWorkflow } from '@/lib/workflow/storage';
 import { createExecutionRecord, addExecutionRecord, completeExecutionRecord } from '@/lib/workflow/history';
@@ -40,6 +42,9 @@ import { WorkflowControls } from './WorkflowControls';
 import { NodeSettingsPanel } from './NodeSettingsPanel';
 import { WorkflowPreview } from './WorkflowPreview';
 import { Undo2, Redo2, PanelLeftClose, PanelLeftOpen, PanelRightClose, PanelRightOpen } from 'lucide-react';
+
+// Global drag data cache for WebView2/Tauri compatibility
+let globalDragData: ToolNodeData | null = null;
 
 // Node types for ReactFlow
 const nodeTypes = {
@@ -270,8 +275,18 @@ function WorkflowEditorContent() {
      * Handle drag over for dropping new nodes
      */
     const onDragOver = useCallback((event: React.DragEvent) => {
-        event.preventDefault();
-        event.dataTransfer.dropEffect = 'move';
+        const isToolDrag = globalDragData !== null || 
+            (event.dataTransfer && (
+                event.dataTransfer.types.includes('application/reactflow') || 
+                event.dataTransfer.types.includes('text/plain')
+            ));
+        
+        if (isToolDrag) {
+            event.preventDefault();
+            if (event.dataTransfer) {
+                event.dataTransfer.dropEffect = 'move';
+            }
+        }
     }, []);
 
     /**
@@ -283,12 +298,23 @@ function WorkflowEditorContent() {
 
             if (!reactFlowWrapper.current || !reactFlowInstance) return;
 
-            const reactFlowBounds = reactFlowWrapper.current.getBoundingClientRect();
-            const nodeDataStr = event.dataTransfer.getData('application/reactflow');
+            // Try to resolve nodeData from global variable first, fallback to dataTransfer for WebView2 compatibility
+            let nodeData: ToolNodeData | null = globalDragData;
+            if (!nodeData) {
+                const nodeDataStr = event.dataTransfer.getData('application/reactflow');
+                if (nodeDataStr) {
+                    try {
+                        nodeData = JSON.parse(nodeDataStr);
+                    } catch (e) {
+                        logger.error('Failed to parse reactflow drag data:', e);
+                    }
+                }
+            }
 
-            if (!nodeDataStr) return;
+            // Always reset the global drag data cache
+            globalDragData = null;
 
-            const nodeData: ToolNodeData = JSON.parse(nodeDataStr);
+            if (!nodeData) return;
 
             const position = reactFlowInstance.screenToFlowPosition({
                 x: event.clientX,
@@ -311,8 +337,18 @@ function WorkflowEditorContent() {
      * Handle drag start from sidebar
      */
     const onDragStart = useCallback((event: React.DragEvent, nodeData: ToolNodeData) => {
+        globalDragData = nodeData;
         event.dataTransfer.setData('application/reactflow', JSON.stringify(nodeData));
+        // Add standard plain text format fallback to ensure drop action gets activated under WebView2/Tauri
+        event.dataTransfer.setData('text/plain', nodeData.toolId);
         event.dataTransfer.effectAllowed = 'move';
+    }, []);
+
+    /**
+     * Handle drag end to clean up global drag data
+     */
+    const onDragEnd = useCallback(() => {
+        globalDragData = null;
     }, []);
 
     /**
@@ -387,13 +423,14 @@ function WorkflowEditorContent() {
                 `for ${inputNodes.length} input node(s): ${inputNodes.map(n => n.data.label).join(', ')}`
             );
 
-            // Assign input files to all input nodes
-            // Note: All input nodes receive ALL files
+            const inputFileAssignments = distributeFilesToInputNodes(inputFiles, inputNodes);
+
             setNodes((nds) => nds.map(node => {
-                if (inputNodes.some(n => n.id === node.id)) {
+                const assigned = inputFileAssignments.get(node.id);
+                if (assigned !== undefined) {
                     return {
                         ...node,
-                        data: { ...node.data, inputFiles },
+                        data: { ...node.data, inputFiles: assigned },
                     };
                 }
                 return node;
@@ -401,6 +438,20 @@ function WorkflowEditorContent() {
 
             // Store outputs for each node
             const nodeOutputs = new Map<string, (Blob | WorkflowOutputFile)[]>();
+
+            const needsLibreOffice = executionOrder.some((nodeId) => {
+                const node = (nodes as WorkflowNode[]).find((n) => n.id === nodeId);
+                return node ? LIBREOFFICE_TOOL_IDS.has(node.data.toolId) : false;
+            });
+
+            if (needsLibreOffice && isCrossOriginIsolated()) {
+                logger.log('[Workflow] Preloading LibreOffice conversion engine...');
+                await preloadLibreOfficeConverter();
+            } else if (needsLibreOffice) {
+                logger.log(
+                    '[Workflow] Cross-Origin Isolation unavailable; Word .docx will use compatibility converter.'
+                );
+            }
 
             // Execute each node in order
             for (let i = 0; i < executionOrder.length; i++) {
@@ -449,11 +500,19 @@ function WorkflowEditorContent() {
                     nodeId,
                     nodes as WorkflowNode[],
                     edges as WorkflowEdge[],
-                    nodeOutputs
+                    nodeOutputs,
+                    inputFileAssignments
                 );
 
-                // If this is an input node without parent outputs, use the selected files
-                const filesToProcess = nodeInputFiles.length > 0 ? nodeInputFiles : inputFiles;
+                const isInputNode = inputNodes.some((n) => n.id === nodeId);
+                const filesToProcess =
+                    nodeInputFiles.length > 0
+                        ? nodeInputFiles
+                        : isInputNode
+                          ? []
+                          : inputNodes.length === 1
+                            ? inputFiles
+                            : [];
 
                 // Log input sizes for debugging data flow
                 const inputSizes = filesToProcess.map((f, idx) => {
@@ -917,6 +976,7 @@ function WorkflowEditorContent() {
             {/* Left Sidebar - Tool Library */}
             <ToolSidebar
                 onDragStart={onDragStart}
+                onDragEnd={onDragEnd}
                 isCollapsed={isLeftSidebarCollapsed}
                 onToggleCollapse={() => setIsLeftSidebarCollapsed(!isLeftSidebarCollapsed)}
             />
@@ -944,7 +1004,12 @@ function WorkflowEditorContent() {
                 </div>
 
                 {/* Canvas */}
-                <div className="flex-1 relative" ref={reactFlowWrapper}>
+                <div 
+                    className="flex-1 relative" 
+                    ref={reactFlowWrapper}
+                    onDragOver={onDragOver}
+                    onDrop={onDrop}
+                >
                     {/* Undo/Redo buttons */}
                     <div className="absolute top-2 left-2 z-10 flex gap-1">
                         <button

@@ -28,6 +28,7 @@
 
 import { WorkerBrowserConverter } from '@matbee/libreoffice-converter/browser';
 import { fetchAssembledBlob } from '../utils/asset-loader';
+import { withBasePath } from '../utils/path';
 
 const LIBREOFFICE_PATH = '/libreoffice-wasm/';
 const ASSET_VERSION = '20240212-3';
@@ -140,12 +141,15 @@ export class LibreOfficeConverter {
             const browserWorkerJsUrl = `${this.basePath}browser.worker.global.js?v=${ASSET_VERSION}`;
 
             this.converter = new WorkerBrowserConverter({
-                sofficeJs: sofficeJsUrl,
+                sofficeJs: `${this.basePath}soffice.js?v=${ASSET_VERSION}`,
                 sofficeWasm: sofficeWasmUrl,
                 sofficeData: sofficeDataUrl,
-                sofficeWorkerJs: sofficeWorkerJsUrl,
-                browserWorkerJs: browserWorkerJsUrl,
+                sofficeWorkerJs: `${this.basePath}soffice.worker.js?v=${ASSET_VERSION}`,
+                browserWorkerJs: `${this.basePath}browser.worker.global.js?v=${ASSET_VERSION}`,
                 verbose: false,
+                fonts: [
+                    { filename: 'NotoSansSC-Regular.ttf', data: fontArrayBuffer }
+                ],
                 onProgress: (info: { phase: string; percent: number; message: string }) => {
                     // Use this.progressCallback so a late-arriving callback from the UI gets picked up
                     if (this.progressCallback && !this.initialized) {
@@ -260,6 +264,20 @@ export class LibreOfficeConverter {
      */
     private async checkEnvironment(): Promise<void> {
         console.warn('[LibreOffice] === Environment Check ===');
+
+        // Unregister any active service workers to prevent them from intercepting 
+        // LibreOffice WASM assets and causing ERR_FAILED / 500 OOM crashes.
+        if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
+            try {
+                const registrations = await navigator.serviceWorker.getRegistrations();
+                for (const reg of registrations) {
+                    await reg.unregister();
+                    console.warn(`[LibreOffice] Unregistered active Service Worker to prevent interference: ${reg.scope}`);
+                }
+            } catch (e) {
+                console.warn('[LibreOffice] Failed to unregister Service Worker:', e);
+            }
+        }
 
         // 1. Check COOP/COEP — this is the #1 cause of WASM timeout
         const isIsolated = window.crossOriginIsolated;

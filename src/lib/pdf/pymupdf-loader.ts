@@ -1,7 +1,4 @@
-/**
- * PyMuPDF Loader
- * Dynamically loads PyMuPDF WASM module using ES module import
- */
+import { withBasePath } from '../utils/path';
 
 // Singleton instance
 let pymupdfInstance: any = null;
@@ -9,6 +6,10 @@ let loadingPromise: Promise<any> | null = null;
 
 function resolvePublicAssetPath(assetPath: string): string {
   if (typeof window === 'undefined') return assetPath;
+
+  // Prefer the explicitly configured withBasePath helper
+  const resolvedPath = withBasePath(assetPath);
+  if (resolvedPath !== assetPath) return resolvedPath;
 
   const normalizedAssetPath = assetPath.startsWith('/') ? assetPath : `/${assetPath}`;
   const scripts = Array.from(document.querySelectorAll('script[src]')) as HTMLScriptElement[];
@@ -1050,6 +1051,11 @@ for page_num in range(len(doc)):
             # Create pixmap from image data
             pix = pymupdf.Pixmap(image_bytes)
             
+            # Skip images with alpha channel (transparency) or masks to prevent icon/vector markup corruption and black background issue
+            obj_str = doc.xref_object(xref)
+            if pix.alpha or base_image.get("smask", 0) > 0 or "/SMask" in obj_str or "/Mask" in obj_str:
+                continue
+            
             # Check if we need to reduce quality
             if pix.width > 100 and pix.height > 100:
                 # Calculate scale factor if image is too large
@@ -1074,20 +1080,7 @@ for page_num in range(len(doc)):
                 
                 # Only replace if we actually reduced size
                 if len(new_image_bytes) < len(image_bytes) * 0.9:
-                    # Update the image stream and its dictionary to match JPEG format
-                    doc.update_stream(xref, new_image_bytes)
-                    # Update the image XObject dictionary to reflect JPEG encoding
-                    doc.xref_set_key(xref, "Filter", "/DCTDecode")
-                    doc.xref_set_key(xref, "ColorSpace", "/DeviceRGB")
-                    doc.xref_set_key(xref, "BitsPerComponent", "8")
-                    # Update dimensions if image was resized
-                    doc.xref_set_key(xref, "Width", str(pix.width))
-                    doc.xref_set_key(xref, "Height", str(pix.height))
-                    # Remove DecodeParms that may be left from PNG/Flate encoding
-                    try:
-                        doc.xref_set_key(xref, "DecodeParms", "null")
-                    except:
-                        pass
+                    page.replace_image(xref, stream=new_image_bytes)
         except Exception as e:
             # Skip images that can't be processed
             pass
@@ -1101,7 +1094,6 @@ if remove_metadata:
 pdf_bytes = doc.tobytes(
     garbage=4,  # Remove unused objects, merge duplicate objects
     deflate=True,  # Compress streams
-    clean=True,  # Clean content streams
 )
 doc.close()
 
@@ -1191,6 +1183,99 @@ base64.b64encode(pdf_bytes).decode('ascii')
           }
 
           return new Blob([bytes], { type: 'application/pdf' });
+        },
+
+        async extractPages(file: File, pages: number[]): Promise<Blob> {
+          const arrayBuffer = await file.arrayBuffer();
+          const pdfData = new Uint8Array(arrayBuffer);
+
+          const uid = `${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+          const inputPath = `/input_extract_${uid}.pdf`;
+          const outputPath = `/output_extract_${uid}.pdf`;
+
+          pyodide.FS.writeFile(inputPath, pdfData);
+
+          // Convert 1-based to 0-based
+          const pageIndices = pages.map(p => p - 1);
+
+          const result = await pyodide.runPythonAsync(`
+import pymupdf
+import base64
+
+doc = pymupdf.open("${inputPath}")
+new_doc = pymupdf.open()
+
+# Insert specific pages. insert_pdf is very efficient and preserves resources.
+new_doc.insert_pdf(doc, from_page=0, to_page=len(doc)-1, select=${JSON.stringify(pageIndices)})
+
+pdf_bytes = new_doc.tobytes(garbage=4, deflate=True)
+doc.close()
+new_doc.close()
+
+base64.b64encode(pdf_bytes).decode('ascii')
+`);
+
+          try {
+            pyodide.FS.unlink(inputPath);
+          } catch {
+            // Ignore
+          }
+
+          const binary = atob(result);
+          const bytes = new Uint8Array(binary.length);
+          for (let i = 0; i < binary.length; i++) {
+            bytes[i] = binary.charCodeAt(i);
+          }
+
+          return new Blob([bytes], { type: 'application/pdf' });
+        },
+
+        async splitPdf(file: File, ranges: { start: number; end: number }[]): Promise<Blob[]> {
+          const arrayBuffer = await file.arrayBuffer();
+          const pdfData = new Uint8Array(arrayBuffer);
+
+          const uid = `${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+          const inputPath = `/input_split_${uid}.pdf`;
+
+          pyodide.FS.writeFile(inputPath, pdfData);
+
+          const blobs: Blob[] = [];
+
+          for (let i = 0; i < ranges.length; i++) {
+            const range = ranges[i];
+            const result = await pyodide.runPythonAsync(`
+import pymupdf
+import base64
+
+doc = pymupdf.open("${inputPath}")
+new_doc = pymupdf.open()
+
+# select pages for this range
+page_indices = list(range(${range.start - 1}, ${range.end}))
+new_doc.insert_pdf(doc, from_page=0, to_page=len(doc)-1, select=page_indices)
+
+pdf_bytes = new_doc.tobytes(garbage=4, deflate=True)
+doc.close()
+new_doc.close()
+
+base64.b64encode(pdf_bytes).decode('ascii')
+`);
+
+            const binary = atob(result);
+            const bytes = new Uint8Array(binary.length);
+            for (let j = 0; j < binary.length; j++) {
+              bytes[j] = binary.charCodeAt(j);
+            }
+            blobs.push(new Blob([bytes], { type: 'application/pdf' }));
+          }
+
+          try {
+            pyodide.FS.unlink(inputPath);
+          } catch {
+            // Ignore
+          }
+
+          return blobs;
         },
       };
 

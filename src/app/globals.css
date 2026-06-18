@@ -118,6 +118,17 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+/* Base Styles for Form Elements */
+select, input:not([type="checkbox"]):not([type="radio"]):not([type="range"]), textarea {
+  background-color: hsl(var(--color-background));
+  color: hsl(var(--color-foreground));
+}
+
+select option {
+  background-color: hsl(var(--color-background));
+  color: hsl(var(--color-foreground));
+}
+
 /* Utility Classes using CSS Variables */
 @theme {
   /* Colors */

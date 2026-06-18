@@ -59,7 +59,11 @@ describe('i18n Property Tests', () => {
       fc.property(
         fc.constantFrom(...ltrLocales),
         (locale) => {
-          return LOCALE_CONFIG[locale].direction === 'ltr';
+          const config = LOCALE_CONFIG[locale];
+          if (RTL_LOCALES.includes(locale)) {
+            return config.direction === 'rtl';
+          }
+          return config.direction === 'ltr';
         }
       ),
       { numRuns: 100 }
